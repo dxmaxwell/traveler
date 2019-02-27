@@ -28,29 +28,24 @@ require('./model/form.js');
 require('./model/traveler.js');
 require('./model/binder.js');
 
-var mongoOptions = {
-  db: {
-    native_parser: true
-  },
-  server: {
-    poolSize: 5,
-    socketOptions: {
-      connectTimeoutMS: 30000,
-      keepAlive: 1
-    }
+var mongoOptions = config.mongo.options || {};
+
+// configure Mongoose (MongoDB)
+var mongoURL = 'mongodb://';
+if (config.mongo.user) {
+  mongoURL += encodeURIComponent(String(config.mongo.user));
+  if (config.mongo.pass) {
+    mongoURL += ':' + encodeURIComponent(String(config.mongo.pass));
   }
-};
-
-var mongoURL = 'mongodb://' + (config.mongo.address || 'localhost') + ':' + (config.mongo.port || '27017') + '/' + (config.mongo.db || 'traveler');
-
-if (config.mongo.user && config.mongo.pass) {
-  mongoOptions.user = config.mongo.user;
-  mongoOptions.pass = config.mongo.pass;
+  mongoURL += '@';
 }
-
-if (config.mongo.auth) {
-  mongoOptions.auth = config.mongo.auth;
+if (!config.mongo.host) {
+  config.mongo.host = String(config.mongo.address || 'localhost') + ':' + String(config.mongo.port || 27017);
 }
+mongoURL +=  config.mongo.host + '/' + String(config.mongo.db || 'traveler-dev');
+
+// Remove password from the MongoDB URL to avoid logging the password!
+console.log('Mongoose connection URL: %s', mongoURL.replace(/\/\/(.*):(.*)@/, '//$1:<password>@'));
 
 mongoose.connect(mongoURL, mongoOptions);
 
