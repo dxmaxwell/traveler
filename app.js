@@ -105,6 +105,9 @@ if (app.get('env') === 'production') {
   app.use(methodOverride());
   app.use(cookieParser());
   app.use(session({
+    store: new session.MemoryStore(),
+    resave: false,
+    saveUninitialized: false,
     secret: config.app.cookie_sec || 'traveler_secret',
     cookie: {
       maxAge: config.app.cookie_life || 28800000
@@ -118,7 +121,9 @@ if (app.get('env') === 'production') {
     }
   }).any());
   app.use(bodyParser.json());
-  app.use(bodyParser.urlencoded());
+  app.use(bodyParser.urlencoded({
+    extended: false,
+  }));
   app.use(auth.proxied);
   app.use(auth.sessionLocals);
   // api.use(api.router); // not supported in Express 4.X
