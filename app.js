@@ -7,6 +7,15 @@ var https = require('https');
 var multer = require('multer');
 var path = require('path');
 
+var bodyParser = require('body-parser');
+var cookieParser = require('cookie-parser');
+var compression = require('compression');
+var errorHandler = require('errorhandler')
+var session = require('express-session');
+var favicon = require('serve-favicon');
+var methodOverride = require('method-override');
+var morgan = require('morgan');
+
 var rotator = require('file-stream-rotator');
 
 var config = require('./config/config.js');
@@ -83,24 +92,24 @@ if (app.get('env') === 'production') {
   });
 }
 
-app.configure(function () {
+{
   app.set('port', process.env.PORT || config.app.port);
   app.set('views', __dirname + '/views');
   app.set('view engine', 'jade');
   if (app.get('env') === 'production') {
-    app.use(express.logger({
+    app.use(morgan({
       stream: access_logfile
     }));
   }
-  app.use(express.compress());
+  app.use(compression());
   app.use(express.static(path.join(__dirname, 'public')));
-  app.use(express.favicon(__dirname + '/public/favicon.ico'));
+  app.use(favicon(__dirname + '/public/favicon.ico'));
   if (app.get('env') === 'development') {
-    app.use(express.logger('dev'));
+    app.use(morgan('dev'));
   }
-  app.use(express.methodOverride());
-  app.use(express.cookieParser());
-  app.use(express.session({
+  app.use(methodOverride());
+  app.use(cookieParser());
+  app.use(session({
     secret: config.app.cookie_sec || 'traveler_secret',
     cookie: {
       maxAge: config.app.cookie_life || 28800000
@@ -112,17 +121,14 @@ app.configure(function () {
       files: 1,
       fileSize: (config.app.upload_size || 10) * 1024 * 1024
     }
-  }));
-  app.use(express.json());
-  app.use(express.urlencoded());
+  }).any());
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded());
   app.use(auth.proxied);
   app.use(auth.sessionLocals);
-  app.use(app.router);
-});
+  // api.use(api.router); // not supported in Express 4.X
+}
 
-app.configure('development', function () {
-  app.use(express.errorHandler());
-});
 
 require('./routes/form')(app);
 
@@ -158,15 +164,19 @@ app.get('/apis', function (req, res) {
   res.redirect('https://' + req.host + ':' + api.get('port') + req.originalUrl);
 });
 
+if (app.get('env') === 'development') {
+  app.use(errorHandler());
+}
+
 api.enable('strict routing');
-api.configure(function () {
+{
   api.set('port', process.env.APIPORT || config.api.port);
-  api.use(express.logger('dev'));
-  // api.use(express.logger({stream: access_logfile}));
+  api.use(morgan('dev'));
+  // api.use(morgan({stream: access_logfile}));
   api.use(auth.basicAuth);
-  api.use(express.compress());
-  api.use(api.router);
-});
+  api.use(compression());
+  // api.use(api.router); // not supported in Express 4.X
+};
 
 require('./routes/api')(api);
 
