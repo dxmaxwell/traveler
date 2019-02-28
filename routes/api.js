@@ -11,7 +11,7 @@ module.exports = function (app) {
         $ne: true
       }
     };
-    if (req.query.hasOwnProperty('device')) {
+    if (Object.prototype.hasOwnProperty.call(req.query, 'device')) {
       search.devices = {
         $in: [req.query.device]
       };

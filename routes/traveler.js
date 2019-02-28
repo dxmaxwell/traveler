@@ -258,7 +258,7 @@ module.exports = function (app) {
           $ne: true
         }
       };
-      if (req.query.hasOwnProperty('device')) {
+      if (Object.prototype.hasOwnProperty.call(req.query, 'device')) {
         search.devices = {
           $in: [req.query.device]
         };
@@ -274,7 +274,7 @@ module.exports = function (app) {
 
     app.get('/currenttravelersinv1/json', auth.ensureAuthenticated, function (req, res) {
       var fullurl = config.legacy_traveler.travelers;
-      if (req.query.hasOwnProperty('device')) {
+      if (Object.prototype.hasOwnProperty.call(req.query, 'device')) {
         fullurl = config.legacy_traveler.devices + req.query.device;
       }
       request({
