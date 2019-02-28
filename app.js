@@ -120,6 +120,21 @@ if (app.get('env') === 'production') {
       fileSize: (config.app.upload_size || 10) * 1024 * 1024
     }
   }).any());
+  // Adapt new version of Multer to old behavior where req.files is an Object!
+  app.use(function(req, res, next) {
+    if (Array.isArray(req.files)) {
+      var obj = {};
+      for (var idx=0; idx<req.files.length; idx+=1) {
+        if (obj[req.files[idx].fieldname]) {
+          console.warn("Request contains two or more files with the same fieldname: %s", req.files[idx].fieldname);
+          continue;
+        }
+        obj[req.files[idx].fieldname] = req.files[idx];
+      }
+      req.files = obj;
+    }
+    next();
+  })
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({
     extended: false,
