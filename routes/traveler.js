@@ -236,9 +236,15 @@ module.exports = function (app) {
 
   app.get('/publictravelers/json', auth.ensureAuthenticated, function (req, res) {
     Traveler.find({
-      publicAccess: {
-        $in: [0, 1]
-      },
+      $or: [{
+        publicAccess: {
+          $in: [0, 1],
+        },
+      }, {
+        publicAccess: {
+          $exists: false,
+        },
+      }],
       archived: {
         $ne: true
       }
