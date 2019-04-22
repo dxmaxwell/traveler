@@ -248,7 +248,7 @@ module.exports = function (app) {
       archived: {
         $ne: true
       }
-    }).exec(function (err, travelers) {
+    }).lean().exec(function (err, travelers) {
       if (err) {
         console.error(err);
         return res.send(500, err.message);
