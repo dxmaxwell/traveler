@@ -248,7 +248,7 @@ module.exports = function (app) {
       archived: {
         $ne: true
       }
-    }).lean().exec(function (err, travelers) {
+    }, 'title description status devices locations createdBy createdOn owner deadline updatedBy updatedOn sharedWith sharedGroup').lean().exec(function (err, travelers) {
       if (err) {
         console.error(err);
         return res.send(500, err.message);
