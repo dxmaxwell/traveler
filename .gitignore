@@ -1,14 +1,37 @@
-# Node modules #
+# IDE configure file
+.idea/
+.vscode/
+*~
+*.sublime-project
+*.sublime-workspace
+
+# NPM package installations
 node_modules/
+
+# NPM debug log
+npm-debug.log
 
 # Git related files. #
 *.orig
 
-# Editor bread crumbs. #
-*~
-# sublime stuff#
-*.sublime-project
-*.sublime-workspace
+# Ignore Typescript cache
+.tscache
+
+# Ignore grunt-ts crumb
+.baseDir.ts
+
+# Ignore build directory
+/app/
+
+# Ignore test directory
+/test/app/
+/test/apptest/
+
+# Ignore configuration files
+/config/
+
+# Ignore test coverage results
+/.nyc_output
 
 # system related #
 .DS_Store
@@ -31,6 +54,3 @@ config/app.json
 config/mongo.json
 config/alias.json
 
-
-# npm stuff #
-npm-debug.log*
