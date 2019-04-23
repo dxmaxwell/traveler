@@ -236,13 +236,19 @@ module.exports = function (app) {
 
   app.get('/publictravelers/json', auth.ensureAuthenticated, function (req, res) {
     Traveler.find({
-      publicAccess: {
-        $in: [0, 1]
-      },
+      $or: [{
+        publicAccess: {
+          $in: [0, 1],
+        },
+      }, {
+        publicAccess: {
+          $exists: false,
+        },
+      }],
       archived: {
         $ne: true
       }
-    }).exec(function (err, travelers) {
+    }, 'title description status devices locations createdBy createdOn owner deadline updatedBy updatedOn sharedWith sharedGroup').lean().exec(function (err, travelers) {
       if (err) {
         console.error(err);
         return res.send(500, err.message);
