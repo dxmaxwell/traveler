@@ -6,7 +6,7 @@ var TravelerNote = mongoose.model('TravelerNote');
 
 module.exports = function (app) {
   app.get('/apis/travelers/', function (req, res) {
-    var search = {
+    var search: { archived: { $ne: boolean }, devices?: { $in: unknown[] }  } = {
       archived: {
         $ne: true
       }

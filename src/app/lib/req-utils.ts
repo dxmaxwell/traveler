@@ -272,7 +272,7 @@ function getSharedGroup(sharedGroup, id) {
 }
 
 
-module.exports = {
+export = {
   filter: filter,
   hasAll: hasAll,
   sanitize: sanitizeMw,

@@ -224,7 +224,12 @@ module.exports = function (app) {
   });
 
   app.post('/binders/', auth.ensureAuthenticated, reqUtils.filter('body', ['title', 'description']), reqUtils.hasAll('body', ['title']), reqUtils.sanitize('body', ['title', 'description']), function (req, res) {
-    var binder = {};
+    var binder: {
+      works?: unknown[];
+      title?: unknown;
+      description?: unknown;
+      createdBy?: unknown;
+      createdOn?: number } = {};
     if (req.body.works && underscore.isArray(req.body.works)) {
       binder.works = req.body.works;
     } else {

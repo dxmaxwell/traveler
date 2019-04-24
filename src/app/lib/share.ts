@@ -8,6 +8,8 @@ var mongoose = require('mongoose');
 var User = mongoose.model('User');
 var Group = mongoose.model('Group');
 
+type AddToSet = { forms?: unknown, travelers?: unknown, binders?: unknown };
+
 function addUserFromAD(req, res, doc) {
   var name = req.body.name;
   var nameFilter = ad.nameFilter.replace('_name', name);
@@ -170,7 +172,7 @@ function addUser(req, res, doc) {
         }
         return res.send(201, 'The user named ' + name + ' was added to the share list.');
       });
-      var addToSet = {};
+      var addToSet: AddToSet = {};
       switch (doc.constructor.modelName) {
       case 'Form':
         addToSet.forms = doc._id;
@@ -224,7 +226,7 @@ function addGroup(req, res, doc) {
         }
         return res.send(201, 'The group ' + id + ' was added to the share list.');
       });
-      var addToSet = {};
+      var addToSet: AddToSet = {};
       switch (doc.constructor.modelName) {
       case 'Form':
         addToSet.forms = doc._id;
@@ -290,7 +292,7 @@ function removeFromList(req, res, doc) {
       Target = Group;
     }
 
-    var pull = {};
+    var pull: AddToSet = {};
     switch (doc.constructor.modelName) {
     case 'Form':
       pull.forms = doc._id;
@@ -401,7 +403,7 @@ function changeOwner(req, res, doc) {
   });
 }
 
-module.exports = {
+export = {
   addShare: addShare,
   removeShare: removeShare,
   changeOwner: changeOwner

@@ -370,7 +370,13 @@ module.exports = function (app) {
   });
 
   app.post('/forms/', auth.ensureAuthenticated, reqUtils.sanitize('body', ['html']), function (req, res) {
-    var form = {};
+    var form: {
+      html?: unknown;
+      clonedFrom?: unknown,
+      title?: unknown;
+      createdBy?: unknown;
+      createdOn?: number
+      sharedWith?: unknown[] } = {};
     if (req.body.html) {
       form.html = req.body.html;
       form.clonedFrom = req.body.id;
@@ -395,7 +401,13 @@ module.exports = function (app) {
 
   app.post('/forms/:id/clone', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canReadMw('id'), function (req, res) {
     var doc = req[req.params.id];
-    var form = {};
+    var form: {
+      html?: unknown;
+      clonedFrom?: unknown,
+      title?: unknown;
+      createdBy?: unknown;
+      createdOn?: number
+      sharedWith?: unknown[] } = {};
     form.html = sanitize(doc.html);
     form.title = sanitize(doc.title) + ' clone';
     form.createdBy = req.session.userid;
