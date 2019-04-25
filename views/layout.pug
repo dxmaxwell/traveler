@@ -14,37 +14,37 @@ html
           .nav-collapse.collapse
             ul.nav
               li
-                a(href='#{prefix}/forms/') Forms
+                a(href=basePath + '/forms/') Forms
               li
-                a(href='#{prefix}/travelers/') Travelers
+                a(href=basePath + '/travelers/') Travelers
               li
-                a(href='#{prefix}/binders/') Binders
+                a(href=basePath + '/binders/') Binders
               li
-                a(href='#{prefix}/docs/', target='_blank') Documents
+                a(href=basePath + '/docs/', target='_blank') Documents
               if (locals.session && locals.session.userid && locals.session.roles && locals.session.roles.indexOf('admin') !== -1)
                 li
-                  a(href='#{prefix}/admin/', target='_blank') Admin
+                  a(href=basePath + '/admin/', target='_blank') Admin
             ul.nav.pull-right
               if (locals.session && locals.session.userid)
                 li
                   .user
-                    img(src='#{prefix}/adusers/#{session.userid}/photo', title='#{session.username}')
+                    img(src=basePath + '/adusers/' + session.userid + '/photo', alt=session.username)
                 li.dropdown
                   a.dropdown-toggle(href='#', data-toggle='dropdown') #{session.username}
                     b.caret
                   ul.dropdown-menu
                     li
-                      a(href='#{prefix}/profile', target='_blank') Profile
+                      a(href=basePath + '/profile', target='_blank') Profile
                     li
-                      a(href='#{prefix}/logout') Log out
+                      a(href=basePath + '/logout') Log out
               else
                 li
                   i.fa.fa-user.fa-3x
                 li
-                  a(href='#{prefix}/login') Log in
+                  a(href=basePath + '/login') Log in
     block content
     .container-fluid
       h6.text-right
-        a(href='#{prefix}/release.txt', target='_blank') Release 3.0.1
+        a(href=basePath + '/release.txt', target='_blank') Release 3.0.1
     block js
 

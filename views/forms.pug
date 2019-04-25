@@ -1,0 +1,130 @@
+extends layout.pug
+
+block head
+  title FRIB Forms
+  meta(name='viewport', content='width=device-width, initial-scale=1.0')
+  link(rel='stylesheet', href=basePath + '/bootstrap/css/bootstrap.css')
+  link(rel='stylesheet', href=basePath + '/bootstrap/css/bootstrap-responsive.css')
+  link(rel='stylesheet', href=basePath + '/datatables/css/dataTables.bootstrap.css')
+  link(rel='stylesheet', href=basePath + '/font-awesome-4.3.0/css/font-awesome.css')
+  link(rel='stylesheet', href=basePath + '/stylesheets/style.css')
+
+block content
+  script(type='text/javascript').
+    var prefix = '!{prefix}';
+  .container-fluid
+    .btn-toolbar
+      .btn-group
+        a.btn.btn-primary#new(href=basePath + '/forms/new', target='_blank', data-toggle='tooltip', title='create new empty forms')
+          i.fa.fa-file-o.fa-lg
+          | &nbsp;New Form
+      .btn-group
+        button.btn.btn-primary#clone(type='button', data-toggle='tooltip', title='clone selected forms')
+          i.fa.fa-copy.fa-lg
+          | &nbsp;Clone
+      .btn-group
+        button.btn.btn-primary#form-travel(type='button', data-toggle='tooltip', title='create travelers from selected forms')
+          i.fa.fa-plane.fa-lg
+          | &nbsp;Travel
+      .btn-group
+        a.btn.btn-info#all-forms(href=basePath + '/publicforms/', target='_blank', data-toggle='tooltip', title='see all public forms')
+          i.fa.fa-institution.fa-lg
+          | &nbsp;All public forms
+      .btn-group
+        button.btn.btn-info#reload(type='button')
+          i.fa.fa-refresh.fa-lg
+          | &nbsp;Reload all tables
+    #message
+    .modal.hide.fade#modal(tabindex='-1', role='dialog', data-backdrop='static', aria-labelledby='modalLabel', aria-hidden='true')
+      .modal-header
+        h3#modalLabel
+      .modal-body.modal-body-visible
+      .modal-footer
+    div
+      ul.nav.nav-tabs
+        li.active
+          a(href='#forms', data-toggle='tab') My forms
+        li
+          a(href='#transferredforms', data-toggle='tab') Transferred forms
+        li
+          a(href='#sharedfroms', data-toggle='tab') Shared forms
+        li
+          a(href='#groupsharedfroms', data-toggle='tab') Group shared forms
+        li
+          a(href='#archivedforms', data-toggle='tab') Archived forms
+      .tab-content
+        .tab-pane.active#forms
+          .btn-toolbar
+            .btn-group
+              button.btn.btn-info.reload(type='button')
+                i.fa.fa-refresh.fa-lg
+                | &nbsp;Reload table
+            .btn-group
+              button.btn.btn-warning.archive(type='button', data-toggle='tooltip', title='archive selected forms, only you can see them after archived.')
+                i.fa.fa-archive.fa-lg
+                | &nbsp;Archive
+            .btn-group
+              button.btn.btn-warning.transfer(type='button', data-toggle='tooltip', title='transfer the ownership of selected forms to a coworker')
+                i.fa.fa-user.fa-lg
+                | &nbsp;Transfer ownership
+          table.table.table-bordered.table-hover#form-table
+        .tab-pane#transferredforms
+          .btn-toolbar
+            .btn-group
+              button.btn.btn-info.reload(type='button')
+                i.fa.fa-refresh.fa-lg
+                | &nbsp;Reload table
+            .btn-group
+              button.btn.btn-warning.archive(type='button', data-toggle='tooltip', title='archive selected forms, only you can see them after archived.')
+                i.fa.fa-archive.fa-lg
+                | &nbsp;Archive
+            .btn-group
+              button.btn.btn-warning.transfer(type='button', data-toggle='tooltip', title='transfer the ownership of selected forms to a coworker')
+                i.fa.fa-user.fa-lg
+                | &nbsp;Transfer ownership
+          table.table.table-bordered.table-hover#transferred-form-table
+        .tab-pane#sharedfroms
+          .btn-toolbar
+            .btn-group
+              button.btn.btn-info.reload(type='button')
+                i.fa.fa-refresh.fa-lg
+                | &nbsp;Reload table
+          table.table.table-bordered.table-hover#shared-form-table
+        .tab-pane#groupsharedfroms
+          .btn-toolbar
+            .btn-group
+              button.btn.btn-info.reload(type='button')
+                i.fa.fa-refresh.fa-lg
+                | &nbsp;Reload table
+          table.table.table-bordered.table-hover#group-shared-form-table
+        .tab-pane#archivedforms
+          .btn-toolbar
+            .btn-group
+              button.btn.btn-info.reload(type='button')
+                i.fa.fa-refresh.fa-lg
+                | &nbsp;Reload table
+            .btn-group
+              button.btn.btn-primary#dearchive(type='button', data-toggle='tooltip', title='de-archive selected travelers')
+                i.fa.fa-inbox.fa-lg
+                | &nbsp;De-archive
+          table.table.table-bordered.table-hover#archived-form-table
+
+
+block js
+  script(type='text/javascript', src=basePath + '/jquery/jquery-1.9.1.js')
+  script(type='text/javascript', src=basePath + '/datatables/js/jquery.dataTables.js')
+  script(type='text/javascript', src=basePath + '/bootstrap/js/bootstrap.js')
+  script(type='text/javascript', src=basePath + '/datatables/js/ZeroClipboard.js')
+  script(type='text/javascript', src=basePath + '/datatables/js/TableTools.js')
+  script(type='text/javascript', src=basePath + '/datatables/js/dataTables.bootstrap.js')
+  script(type='text/javascript', src=basePath + '/dependencies/moment.js')
+  script(type='text/javascript', src=basePath + '/dependencies/holder.js')
+  script(type='text/javascript', src=basePath + '/javascripts/table.js')
+  script(type='text/javascript', src=basePath + '/javascripts/ajax-helper.js')
+  script(type='text/javascript', src=basePath + '/dependencies/typeahead.bundle.js')
+  script(type='text/javascript', src=basePath + '/javascripts/global.js')
+  script(type='text/javascript', src=basePath + '/javascripts/usernames.js')
+  script(type='text/javascript', src=basePath + '/javascripts/table-action.js')
+  script(type='text/javascript', src=basePath + '/javascripts/forms.js')
+
+

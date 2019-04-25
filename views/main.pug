@@ -1,38 +1,38 @@
-extends layout
+extends layout.pug
 
 block head
   title FRIB Traveler Application
   meta(name='viewport', content='width=device-width, initial-scale=1.0')
-  link(rel='stylesheet', href='#{prefix}/bootstrap/css/bootstrap.css')
-  link(rel='stylesheet', href='#{prefix}/bootstrap/css/bootstrap-responsive.css')
-  link(rel='stylesheet', href='#{prefix}/font-awesome-4.3.0/css/font-awesome.css')
-  link(rel='stylesheet', href='#{prefix}/stylesheets/style.css')
+  link(rel='stylesheet', href=basePath + '/bootstrap/css/bootstrap.css')
+  link(rel='stylesheet', href=basePath + '/bootstrap/css/bootstrap-responsive.css')
+  link(rel='stylesheet', href=basePath + '/font-awesome-4.3.0/css/font-awesome.css')
+  link(rel='stylesheet', href=basePath + '/stylesheets/style.css')
 
 block content
   script(type='text/javascript').
     var prefix = '!{prefix}';
-  .container(style="margin-top: 20px")
+  .container(style='margin-top: 20px')
     .alert.hide
     .main
       h1#h1m Collaboration
       p.main-byline With forms, travelers, and binders.
         | &nbsp;
-        a(href='#{prefix}/docs/', target='_blank') Need help?
+        a(href=basePath + '/docs/', target='_blank') Need help?
       hr.soften
       .row-fluid
         .span4
           h1
-            a(href='#{prefix}/forms/', target='_blank')
+            a(href=basePath + '/forms/', target='_blank')
               i.fa.fa-list-ol.fa-4x
           h2 Design forms
         .span4
           h1
-            a(href='#{prefix}/travelers/', target='_blank')
+            a(href=basePath + '/travelers/', target='_blank')
               i.fa.fa-check-square-o.fa-4x
           h2 Carry out
         .span4
           h1
-            a(href='#{prefix}/binders/', target='_blank')
+            a(href=basePath + '/binders/', target='_blank')
               i.fa.fa-briefcase.fa-4x
           h2 Organize works
       hr.soften
@@ -74,9 +74,9 @@ block content
       hr.soften
 
 block js
-  script(type='text/javascript', src='#{prefix}/jquery/jquery-1.9.1.js')
-  script(type='text/javascript', src='#{prefix}/bootstrap/js/bootstrap.js')
-  script(type='text/javascript', src='#{prefix}/dependencies/moment.js')
-  script(type='text/javascript', src='#{prefix}/javascripts/main.js')
+  script(type='text/javascript', src=basePath + '/jquery/jquery-1.9.1.js')
+  script(type='text/javascript', src=basePath + '/bootstrap/js/bootstrap.js')
+  script(type='text/javascript', src=basePath + '/dependencies/moment.js')
+  script(type='text/javascript', src=basePath + '/javascripts/main.js')
 
 

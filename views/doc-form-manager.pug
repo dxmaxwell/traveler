@@ -4,10 +4,10 @@ html
     meta(http-equiv='X-UA-Compatible', content='IE=Edge')
     title FRIB Traveler :: about :: manage forms in traveler
     meta(name='viewport', content='width=device-width, initial-scale=1.0')
-    link(rel='stylesheet', href='#{prefix}/bootstrap/css/bootstrap.css')
-    link(rel='stylesheet', href='#{prefix}/bootstrap/css/bootstrap-responsive.css')
-    link(rel='stylesheet', href='#{prefix}/font-awesome-4.0.3/css/font-awesome.css')
-    link(rel='stylesheet', href='#{prefix}/stylesheets/style.css')
+    link(rel='stylesheet', href=basePath + '/bootstrap/css/bootstrap.css')
+    link(rel='stylesheet', href=basePath + '/bootstrap/css/bootstrap-responsive.css')
+    link(rel='stylesheet', href=basePath + '/font-awesome-4.0.3/css/font-awesome.css')
+    link(rel='stylesheet', href=basePath + '/stylesheets/style.css')
   body(data-spy='scroll', data-target='.bs-docs-sidebar')
     .navbar.navbar-inverse.navbar-fixed-top
       .navbar-inner
@@ -22,16 +22,16 @@ html
               li
                 a(href='https://controls.frib.msu.edu/', target='_blank') Controls
               li.active
-                a(href='#{prefix}/') Traveler
+                a(href=basePath + '/') Traveler
               li
                 a(href='https://controls.frib.msu.edu/controlshelp/', target='_blank') Report a problem
               li
-                a(href='#{prefix}/logout') Logout
+                a(href=basePath + '/logout') Logout
     //- .container-fluid
     .container
       .row
         .span3.bs-docs-sidebar
-          ul.nav.nav-list.bs-docs-sidenav.affix(data-offset-top='282', data-spy='affix', style="top: 40px;")
+          ul.nav.nav-list.bs-docs-sidenav.affix(data-offset-top='282', data-spy='affix', style='top: 40px;')
             li
               a(href='#manage') Manage forms
             li
@@ -50,10 +50,10 @@ html
 
             p Click the "Manage forms" button to go to the form manager page for the traveler.
 
-            img(src='#{prefix}/images/config-form.png')
+            img(src=basePath + '/images/config-form.png', alt='config-form')
             p The left side of the form manager page has three tables: the active form, the used forms, and the available forms. The right side is a preview of the traveler with the selected form and the data and notes already collected in the traveler. When the page first loaded, the active form is highlighted. The active and used forms table contains form aliases and their last activation date.
 
-            img(src='#{prefix}/images/form-manager.png')
+            img(src=basePath + '/images/form-manager.png', alt='form-manager')
 
             p The available forms table contains the same set of forms as in the "My forms" tab on the main page of the traveler application. A form will be selected and highlighted when you click the #[i.fa.fa-eye.fa-lg.a-color] icon, and the preview on the right side of the page will be refreshed. A #[i.fa.fa-edit.fa-lg.a-color] icon in the "Reference" column links to the form that was originally based on. You might want to use an updated version of that form to update the traveler. Note that a traveler contains only the snapshot copy of the form when it is used.
 
@@ -61,21 +61,21 @@ html
             .page-header
               h2 Use an available form
             p First locate the form that you want to use in the available forms table. You can filter the table by the title of the forms. Then you need to click the #[i.fa.fa-eye.fa-lg.a-color] icon of the wanted form, the right side traveler preview will be updated, and the form row is highlighted. Click the "Use selected form" and confirm, and the form will be added to be traveler and become active.
-            img(src='#{prefix}/images/use-form.png')
+            img(src=basePath + '/images/use-form.png', alt='add')
             p The new form will appear in the active form table, and the previously active form will appear in the used forms table. The change will be seem by all users.
 
           section#switch
             .page-header
               h2 Switch back to a used form
             p Sometimes, you might find one of the previously used forms is better than the current active one. You can easily switch by choosing the one you like in the "Used forms" table, and click the "Use selected form" button.
-            img(src='#{prefix}/images/switch-form.png')
+            img(src=basePath + '/images/switch-form.png', alt='switch')
             p After switching, the active form and used forms table will be adjusted accordingly. The traveler update will be seen when it is loaded or refreshed.
 
           section#alias
             .page-header
               h2 Set the alias of a form
             p Every form that has been used by the traveler has an alias. When a form was first used by the traveler, the alias is the same as the form's title. You can update it by selecting it and click the "Set alias" button. The alias can help to distinguish forms.
-            img(src='#{prefix}/images/form-alias.png')
+            img(src=basePath + '/images/form-alias.png', alt='alias')
 
           section#progress
             .page-header
@@ -85,5 +85,5 @@ html
       p
       p
       p
-    script(type='text/javascript', src='#{prefix}/jquery/jquery-1.9.1.js')
-    script(type='text/javascript', src='#{prefix}/bootstrap/js/bootstrap.js')
+    script(type='text/javascript', src=basePath + '/jquery/jquery-1.9.1.js')
+    script(type='text/javascript', src=basePath + '/bootstrap/js/bootstrap.js')

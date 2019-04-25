@@ -1,0 +1,133 @@
+extends layout.pug
+
+block head
+  title FRIB Travelers
+  meta(name='viewport', content='width=device-width, initial-scale=1.0')
+  link(rel='stylesheet', href=basePath + '/bootstrap/css/bootstrap.css')
+  link(rel='stylesheet', href=basePath + '/bootstrap/css/bootstrap-responsive.css')
+  link(rel='stylesheet', href=basePath + '/datatables/css/dataTables.bootstrap.css')
+  link(rel='stylesheet', href=basePath + '/font-awesome-4.3.0/css/font-awesome.css')
+  link(rel='stylesheet', href=basePath + '/stylesheets/style.css')
+
+block content
+  script(type='text/javascript').
+    var prefix = '!{prefix}';
+  .container-fluid
+    .btn-toolbar
+      .btn-group
+        button.btn.btn-primary#clone(type='button', data-toggle='tooltip', title='clone selected travelers')
+          i.fa.fa-copy.fa-lg
+          | &nbsp;Clone
+      .btn-group
+        button.btn.btn-primary#add-to-binder(type='button', data-toggle='tooltip', title='add selected travelers into a binder')
+          i.fa.fa-briefcase.fa-lg
+          | &nbsp;Add to binder
+      .btn-group
+        button.btn.btn-info#reload(type='button')
+          i.fa.fa-refresh.fa-lg
+          | &nbsp;Reload all tables
+      .btn-group
+        a.btn.btn-info#all-travelers(href=basePath + '/publictravelers/', target='_blank', data-toggle='tooltip', title='see all public travelers')
+          i.fa.fa-institution.fa-lg
+          | &nbsp;All public travelers
+      .btn-group.dropdown
+        a.btn.btn-info.dropdown-toggle#ref(data-toggle='dropdown')
+          i.fa.fa-gears.fa-lg
+          | &nbsp;References
+          span.caret
+        ul.dropdown-menu
+          li#devices
+            a(href=basePath + '/devices/', target='_blank') Devices in CCDB
+    #message
+    .modal.hide.fade#modal(tabindex='-1', role='dialog', data-backdrop='static', aria-labelledby='modalLabel', aria-hidden='true')
+      .modal-header
+        h3#modalLabel
+      .modal-body.modal-body-visible
+      .modal-footer
+    div
+      ul.nav.nav-tabs
+        li.active
+          a(href='#travelers', data-toggle='tab') My travelers
+        li
+          a(href='#transferredtravelers', data-toggle='tab') Transferred travelers
+        li
+          a(href='#sharedtravelers', data-toggle='tab') Shared travelers
+        li
+          a(href='#groupsharedtravelers', data-toggle='tab') Group shared travelers
+        li
+          a(href='#archivedtravelers', data-toggle='tab') Archived travelers
+
+      .tab-content
+        .tab-pane.active#travelers
+          .btn-toolbar
+            .btn-group
+              button.btn.btn-info.reload(type='button')
+                i.fa.fa-refresh.fa-lg
+                | &nbsp;Reload table
+            .btn-group
+              button.btn.btn-warning.archive(type='button', data-toggle='tooltip', title='archive selected travelers, only the owner can see them after archived.')
+                i.fa.fa-archive.fa-lg
+                | &nbsp;Archive
+            .btn-group
+              button.btn.btn-warning.transfer(type='button', data-toggle='tooltip', title='transfer the ownership of selected travelers to a coworker')
+                i.fa.fa-user.fa-lg
+                | &nbsp;Transfer ownership
+          table.table.table-bordered.table-hover#traveler-table
+        .tab-pane#transferredtravelers
+          .btn-toolbar
+            .btn-group
+              button.btn.btn-info.reload(type='button')
+                i.fa.fa-refresh.fa-lg
+                | &nbsp;Reload table
+            .btn-group
+              button.btn.btn-warning.archive(type='button', data-toggle='tooltip', title='archive selected travelers, only the owner can see them after archived.')
+                i.fa.fa-archive.fa-lg
+                | &nbsp;Archive
+            .btn-group
+              button.btn.btn-warning.transfer(type='button', data-toggle='tooltip', title='transfer the ownership of selected travelers to a coworker')
+                i.fa.fa-user.fa-lg
+                | &nbsp;Transfer ownership
+          table.table.table-bordered.table-hover#transferred-traveler-table
+        .tab-pane#sharedtravelers
+          .btn-toolbar
+            .btn-group
+              button.btn.btn-info.reload(type='button')
+                i.fa.fa-refresh.fa-lg
+                | &nbsp;Reload table
+          table.table.table-bordered.table-hover#shared-traveler-table
+        .tab-pane#groupsharedtravelers
+          .btn-toolbar
+            .btn-group
+              button.btn.btn-info.reload(type='button')
+                i.fa.fa-refresh.fa-lg
+                | &nbsp;Reload table
+          table.table.table-bordered.table-hover#group-shared-traveler-table
+        .tab-pane#archivedtravelers
+          .btn-toolbar
+            .btn-group
+              button.btn.btn-info.reload(type='button')
+                i.fa.fa-refresh.fa-lg
+                | &nbsp;Reload table
+            .btn-group
+              button.btn.btn-primary#dearchive(type='button', data-toggle='tooltip', title='de-archive selected travelers')
+                i.fa.fa-inbox.fa-lg
+                | &nbsp;De-archive
+          table.table.table-bordered.table-hover#archived-traveler-table
+
+
+block js
+  script(type='text/javascript', src=basePath + '/jquery/jquery-1.9.1.js')
+  script(type='text/javascript', src=basePath + '/datatables/js/jquery.dataTables.js')
+  script(type='text/javascript', src=basePath + '/bootstrap/js/bootstrap.js')
+  script(type='text/javascript', src=basePath + '/datatables/js/ZeroClipboard.js')
+  script(type='text/javascript', src=basePath + '/datatables/js/TableTools.js')
+  script(type='text/javascript', src=basePath + '/datatables/js/dataTables.bootstrap.js')
+  script(type='text/javascript', src=basePath + '/dependencies/moment.js')
+  script(type='text/javascript', src=basePath + '/dependencies/holder.js')
+  script(type='text/javascript', src=basePath + '/javascripts/table.js')
+  script(type='text/javascript', src=basePath + '/javascripts/ajax-helper.js')
+  script(type='text/javascript', src=basePath + '/dependencies/typeahead.bundle.js')
+  script(type='text/javascript', src=basePath + '/javascripts/global.js')
+  script(type='text/javascript', src=basePath + '/javascripts/usernames.js')
+  script(type='text/javascript', src=basePath + '/javascripts/table-action.js')
+  script(type='text/javascript', src=basePath + '/javascripts/travelers.js')

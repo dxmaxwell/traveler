@@ -1,0 +1,114 @@
+extends layout.pug
+
+block head
+  meta(charset='urf-8')
+  title FRIB - traveler - #{traveler._id} - config
+  meta(name='viewport', content='width=device-width, initial-scale=1.0')
+  link(rel='stylesheet', href=basePath + '/bootstrap/css/bootstrap.css')
+  link(rel='stylesheet', href=basePath + '/bootstrap/css/bootstrap-responsive.css')
+  link(rel='stylesheet', href=basePath + '/font-awesome-4.3.0/css/font-awesome.css')
+  link(rel='stylesheet', href=basePath + '/bootstrap-datepicker/css/datepicker.css')
+  link(rel='stylesheet', href=basePath + '/stylesheets/style.css')
+
+block content
+  script(type='text/javascript').
+    var prefix = '!{prefix}';
+  .container
+    #message
+    h3 Title:
+      = ' '
+      if (locals.traveler.title === undefined)
+        span.editable#title No title
+      else
+        span.editable#title #{traveler.title}
+      = ' '
+      button.btn.btn-primary.editable(type='button') Edit
+    h4 Description:
+      = ' '
+      if (locals.traveler.description === undefined)
+        span.editable#description No description
+      else
+        span.editable#description #{traveler.description}
+      = ' '
+      button.btn.btn-primary.editable(type='button') Edit
+    h4 Deadline:
+      = ' '
+      span.form-inline
+        if (locals.traveler.deadline === undefined)
+          input#deadline(type='date')
+        else
+          input#deadline(type='date', value=traveler.deadline)
+        = ' '
+    p Created on
+      = ' '
+      span.time #{traveler.createdOn}
+    if (locals.traveler.updatedOn !== undefined)
+      p Updated by #{traveler.updatedBy} on
+        = ' '
+        span.time #{traveler.updatedOn}
+    h4 Status:
+      = ' '
+      case traveler.status
+        when 0
+          | initialized
+        when 1
+          | active
+        when 1.5
+          | submitted for completion
+        when 2
+          | completed
+        when 3
+          | frozen
+    //- h4 Locations
+    //- ul#locations
+      each location in traveler.locations
+        li
+          span.location #{location}
+          = ' '
+          button.btn.btn-small.btn-warning.removeLocation
+            i.fa.fa-trash-o.fa-lg
+    h4 Tags
+    ul#devices
+      each device in traveler.devices
+        li
+          span.device #{device}
+          = ' '
+          button.btn.btn-small.btn-warning.removeDevice(type='button')
+            i.fa.fa-trash-o.fa-lg
+    br
+    .btn-group
+      button.btn.btn-primary#add(type='button') Add tags
+    if (locals.isOwner !== undefined && locals.isOwner)
+      .btn-group
+        a.btn.btn-primary#manage(href='./formmanager', target='_blank') Manage forms
+      case traveler.status
+        when 0
+          .btn-group
+            button.btn.btn-primary#work(type='button') Start to work
+        when 1
+          .btn-group
+            button.btn.btn-warning#freeze(type='button') Freeze
+          .btn-group
+            button.btn.btn-primary#complete(type='button') Submit for completion
+        when 1.5
+          .btn-group
+            button.btn.btn-primary#approve(type='button') Approve completion
+          .btn-group
+            button.btn.btn-warning#more(type='button') More work
+        //- when 2
+        when 3
+          .btn-group
+            button.btn.btn-primary#resume(type='button') Resume
+    .btn-group
+      a.btn.btn-info(href=basePath + '/devices/', target='_blank') Browse devices
+
+block js
+  script(type='text/javascript', src=basePath + '/jquery/jquery-1.9.1.js')
+  script(type='text/javascript', src=basePath + '/bootstrap/js/bootstrap.js')
+  script(type='text/javascript', src=basePath + '/dependencies/typeahead.bundle.js')
+  script(type='text/javascript', src=basePath + '/dependencies/modernizr.js')
+  script(type='text/javascript', src=basePath + '/jquery/jquery.jeditable.js')
+  script(type='text/javascript', src=basePath + '/dependencies/moment.js')
+  script(type='text/javascript', src=basePath + '/bootstrap-datepicker/js/bootstrap-datepicker.js')
+  script(type='text/javascript', src=basePath + '/javascripts/ajax-helper.js')
+  script(type='text/javascript', src=basePath + '/javascripts/traveler-config.js')

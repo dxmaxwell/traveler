@@ -1,0 +1,97 @@
+extends layout.pug
+
+block head
+  meta(charset='urf-8')
+  title FRIB - binder - #{binder._id} - configuration
+  meta(name='viewport', content='width=device-width, initial-scale=1.0')
+  link(rel='stylesheet', href=basePath + '/bootstrap/css/bootstrap.css')
+  link(rel='stylesheet', href=basePath + '/bootstrap/css/bootstrap-responsive.css')
+  link(rel='stylesheet', href=basePath + '/datatables/css/dataTables.bootstrap.css')
+  link(rel='stylesheet', href=basePath + '/font-awesome-4.3.0/css/font-awesome.css')
+  link(rel='stylesheet', href=basePath + '/stylesheets/style.css')
+
+block content
+  script(type='text/javascript').
+    var prefix = '!{prefix}';
+  .container
+    #message
+    .modal.hide.fade#modal(tabindex='-1', role='dialog', data-backdrop='static', aria-labelledby='modalLabel', aria-hidden='true')
+      .modal-header
+        h3#modalLabel
+      .modal-body
+      .modal-footer
+    h3 Title:
+      = ' '
+      span.editable#title #{binder.title}
+      button.btn-primary.editable(type='button') Edit
+    h4 Description:
+      = ' '
+      span.editable#description #{binder.description}
+      button.btn-primary.editable(type='button') Edit
+    p Created on
+      = ' '
+      span.time #{binder.createdOn}
+    if (locals.binder.updatedOn !== undefined)
+      p Updated by #{binder.updatedBy} on
+        = ' '
+        span.time #{binder.updatedOn}
+    h4 Status:
+      = ' '
+      case binder.status
+        when 0
+          | new
+        when 1
+          | active
+        when 2
+          | completed
+    case binder.status
+      when 0
+        .btn-group
+          button.btn.btn-primary#active(type='button', data-toggle='tooltip', title='change the status') Activate
+      when 1
+        .btn-group
+          button.btn.btn-primary#complete(type='button', data-toggle='tooltip', title='change the status') Complete
+      when 2
+        .btn-group
+          button.btn.btn-primary#more(type='button', data-toggle='tooltip', title='change the status') More work
+    h4 Tags
+    ul#tags
+      each tag in binder.tags
+        li
+          span.tag #{tag}
+          = ' '
+          button.btn.btn-small.btn-warning.remove-tag(type='button')
+            i.fa.fa-trash-o.fa-lg
+    br
+    .btn-group
+      button.btn.btn-primary#add-tag(type='button')
+        i.fa.fa-tag.fa-lg
+        | &nbsp;Add tag
+    hr
+    h3 Work list
+    .btn-toolbar
+      .btn-group
+        button.btn.btn-primary#save(type='button')
+          i.fa.fa-save.fa-lg
+          | &nbsp;Save changes
+      .btn-group
+        a.btn.btn-info#view(href='./', target='_blank')
+          i.fa.fa-eye.fa-lg
+          | &nbsp;View binder
+    table.table.table-bordered.table-hover#work-table
+
+block js
+  script(type='text/javascript', src=basePath + '/jquery/jquery-1.9.1.js')
+  script(type='text/javascript', src=basePath + '/jquery/jquery.jeditable.js')
+  script(type='text/javascript', src=basePath + '/datatables/js/jquery.dataTables.js')
+  script(type='text/javascript', src=basePath + '/bootstrap/js/bootstrap.js')
+  script(type='text/javascript', src=basePath + '/datatables/js/ZeroClipboard.js')
+  script(type='text/javascript', src=basePath + '/datatables/js/TableTools.js')
+  script(type='text/javascript', src=basePath + '/datatables/js/dataTables.bootstrap.js')
+  script(type='text/javascript', src=basePath + '/javascripts/table.js')
+  script(type='text/javascript', src=basePath + '/dependencies/moment.js')
+  script(type='text/javascript', src=basePath + '/dependencies/livestamp.js')
+  script(type='text/javascript', src=basePath + '/dependencies/holder.js')
+  script(type='text/javascript', src=basePath + '/javascripts/ajax-helper.js')
+  script(type='text/javascript', src=basePath + '/javascripts/global.js')
+  script(type='text/javascript', src=basePath + '/javascripts/binder-config.js')

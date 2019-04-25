@@ -2,6 +2,14 @@ module.exports = function(grunt) {
   'use strict';
 
   grunt.initConfig({
+    shell: {
+      options: {
+        stderr: false
+      },
+      puglint: {
+        command: './node_modules/.bin/pug-lint ./views/*.pug  ./views/docs/*.pug',
+      },
+    },
     ts: {
       app: {
         tsconfig: {
@@ -46,6 +54,7 @@ module.exports = function(grunt) {
     },
   });
 
+  grunt.loadNpmTasks('grunt-shell');
   grunt.loadNpmTasks('grunt-ts');
   grunt.loadNpmTasks('grunt-tslint');
   grunt.loadNpmTasks('grunt-contrib-clean');
@@ -119,7 +128,12 @@ module.exports = function(grunt) {
     'build',
   ]);
 
+  grunt.registerTask('puglint', [
+    'shell:puglint'
+  ]);
+
   grunt.registerTask('lint', [
     'tslint',
+    'puglint',
   ]);
 };
