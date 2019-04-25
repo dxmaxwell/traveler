@@ -1,24 +1,34 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
+/**
+ * Common sub-schemas for implementing form, traveler and binder models
+ */
+import { Schema } from 'mongoose';
 
-/******
-access := 0 // for read or
-        | 1 // for write or
+export interface IUser {
+  _id: any;
+  username: string;
+  access: number;
+}
+
+export interface IGroup {
+  _id: any;
+  groupname: string;
+  access: number;
+}
+
+/*
+access :=  0 // for read or
+        |  1 // for write or
         | -1 // no access
-******/
-var sharedWithUser = new Schema({
+*/
+
+export const userSchema = new Schema({
   _id: String,
   username: String,
   access: Number
 });
 
-var sharedWithGroup = new Schema({
+export const groupSchema = new Schema({
   _id: String,
   groupname: String,
   access: Number
 });
-
-module.exports = {
-  user: sharedWithUser,
-  group: sharedWithGroup
-};

@@ -1,16 +1,49 @@
-/*jslint es5: true*/
+/**
+ * Utilities for managing shared forms, travelers and binders
+ */
+import * as express from 'express';
 
-var ad = require('../config/ad.json');
-var ldapClient = require('./ldap-client');
+import * as ldapjs from './ldap-client';
 
-var mongoose = require('mongoose');
+import {
+  Group,
+  User,
+} from '../model/user';
 
-var User = mongoose.model('User');
-var Group = mongoose.model('Group');
+interface AddToSet {
+  forms?: unknown;
+  travelers?: unknown;
+  binders?: unknown;
+}
 
-type AddToSet = { forms?: unknown, travelers?: unknown, binders?: unknown };
+interface ADConfig {
+  // searchFilter: string;
+  // rawAttributes: string[];
+  objAttributes: string[];
+  searchBase: string;
+  nameFilter: string;
+  groupSearchFilter: string;
+  groupSearchBase: string;
+  groupAttributes: string[];
+}
 
-function addUserFromAD(req, res, doc) {
+type Request = express.Request;
+type Response = express.Response;
+
+
+let ad: ADConfig;
+
+export function setADConfig(config: ADConfig) {
+  ad = config;
+}
+
+let ldapClient: ldapjs.Client;
+
+export function setLDAPClient(client: ldapjs.Client) {
+  ldapClient = client;
+}
+
+function addUserFromAD(req: Request, res: Response, doc) {
   var name = req.body.name;
   var nameFilter = ad.nameFilter.replace('_name', name);
   var opts = {
@@ -19,18 +52,18 @@ function addUserFromAD(req, res, doc) {
     scope: 'sub'
   };
 
-  ldapClient.search(ad.searchBase, opts, false, function (err, result) {
+  ldapClient.legacySearch(ad.searchBase, opts, false, function (err, result) {
     if (err) {
       console.error(err.name + ' : ' + err.message);
-      return res.json(500, err);
+      return res.status(500).json(err);
     }
 
     if (result.length === 0) {
-      return res.send(400, name + ' is not found in AD!');
+      return res.status(400).json(name + ' is not found in AD!');
     }
 
     if (result.length > 1) {
-      return res.send(400, name + ' is not unique!');
+      return res.status(400).json(name + ' is not unique!');
     }
 
     var id = result[0].sAMAccountName.toLowerCase();
@@ -46,7 +79,7 @@ function addUserFromAD(req, res, doc) {
     doc.save(function (docErr) {
       if (docErr) {
         console.error(docErr);
-        return res.send(500, docErr.message);
+        return res.status(500).json(docErr.message);
       }
       var user = new User({
         _id: result[0].sAMAccountName.toLowerCase(),
@@ -74,12 +107,12 @@ function addUserFromAD(req, res, doc) {
           console.error(userErr);
         }
       });
-      return res.send(201, 'The user named ' + name + ' was added to the share list.');
+      return res.status(201).json('The user named ' + name + ' was added to the share list.');
     });
   });
 }
 
-function addGroupFromAD(req, res, doc) {
+function addGroupFromAD(req: Request, res: Response, doc) {
   var id = req.body.id.toLowerCase();
   var filter = ad.groupSearchFilter.replace('_id', id);
   var opts = {
@@ -88,18 +121,18 @@ function addGroupFromAD(req, res, doc) {
     scope: 'sub'
   };
 
-  ldapClient.search(ad.groupSearchBase, opts, false, function (err, result) {
+  ldapClient.legacySearch(ad.groupSearchBase, opts, false, function (err, result) {
     if (err) {
       console.error(err);
-      return res.send(500, err.message);
+      return res.status(500).json(err.message);
     }
 
     if (result.length === 0) {
-      return res.send(400, id + ' is not found in AD!');
+      return res.status(400).json(id + ' is not found in AD!');
     }
 
     if (result.length > 1) {
-      return res.send(400, id + ' is not unique!');
+      return res.status(400).json(id + ' is not unique!');
     }
 
     var name = result[0].displayName;
@@ -115,7 +148,7 @@ function addGroupFromAD(req, res, doc) {
     doc.save(function (docErr) {
       if (docErr) {
         console.error(docErr);
-        return res.send(500, docErr.message);
+        return res.status(500).json(docErr.message);
       }
       var group = new Group({
         _id: result[0].sAMAccountName.toLowerCase(),
@@ -140,12 +173,12 @@ function addGroupFromAD(req, res, doc) {
           console.error(groupErr);
         }
       });
-      return res.send(201, 'The group ' + id + ' was added to the share list.');
+      return res.status(201).json('The group ' + id + ' was added to the share list.');
     });
   });
 }
 
-function addUser(req, res, doc) {
+function addUser(req: Request, res: Response, doc) {
   var name = req.body.name;
   // check local db first then try ad
   User.findOne({
@@ -153,7 +186,7 @@ function addUser(req, res, doc) {
   }, function (err, user) {
     if (err) {
       console.error(err);
-      return res.send(500, err.message);
+      return res.status(500).json(err.message);
     }
     if (user) {
       var access = 0;
@@ -168,9 +201,9 @@ function addUser(req, res, doc) {
       doc.save(function (docErr) {
         if (docErr) {
           console.error(docErr);
-          return res.send(500, docErr.message);
+          return res.status(500).json(docErr.message);
         }
-        return res.send(201, 'The user named ' + name + ' was added to the share list.');
+        return res.status(201).json('The user named ' + name + ' was added to the share list.');
       });
       var addToSet: AddToSet = {};
       switch (doc.constructor.modelName) {
@@ -199,7 +232,7 @@ function addUser(req, res, doc) {
   });
 }
 
-function addGroup(req, res, doc) {
+function addGroup(req: Request, res: Response, doc) {
   var id = req.body.id.toLowerCase();
   // check local db first then try ad
   Group.findOne({
@@ -207,7 +240,7 @@ function addGroup(req, res, doc) {
   }, function (err, group) {
     if (err) {
       console.error(err);
-      return res.send(500, err.message);
+      return res.status(500).json(err.message);
     }
     if (group) {
       var access = 0;
@@ -222,9 +255,9 @@ function addGroup(req, res, doc) {
       doc.save(function (docErr) {
         if (docErr) {
           console.error(docErr);
-          return res.send(500, docErr.message);
+          return res.status(500).json(docErr.message);
         }
-        return res.send(201, 'The group ' + id + ' was added to the share list.');
+        return res.status(201).json('The group ' + id + ' was added to the share list.');
       });
       var addToSet: AddToSet = {};
       switch (doc.constructor.modelName) {
@@ -253,7 +286,7 @@ function addGroup(req, res, doc) {
   });
 }
 
-function removeFromList(req, res, doc) {
+function removeFromList(req: Request, res: Response, doc) {
   // var form = req[req.params.id];
   var list;
   var ids = req.params.shareid.split(',');
@@ -275,13 +308,13 @@ function removeFromList(req, res, doc) {
   });
 
   if (removed.length === 0) {
-    return res.send(400, 'cannot find ' + req.params.shareid + ' in list.');
+    return res.status(400).json('cannot find ' + req.params.shareid + ' in list.');
   }
 
   doc.save(function (saveErr) {
     if (saveErr) {
       console.error(saveErr);
-      return res.send(500, saveErr.message);
+      return res.status(500).json(saveErr.message);
     }
     // keep the consistency of user's form list
     var Target;
@@ -320,7 +353,7 @@ function removeFromList(req, res, doc) {
       });
     });
 
-    return res.json(200, removed);
+    return res.status(200).json( removed);
   });
 }
 
@@ -331,9 +364,9 @@ function removeFromList(req, res, doc) {
  * @param  {Documment}   doc the document to share
  * @return {undefined}
  */
-function addShare(req, res, doc) {
+export function addShare(req: Request, res: Response, doc) {
   if (['Form', 'Traveler', 'Binder'].indexOf(doc.constructor.modelName) === -1) {
-    return res.send(500, 'cannot handle the document type ' + doc.constructor.modelName);
+    return res.status(500).json('cannot handle the document type ' + doc.constructor.modelName);
   }
   if (req.params.list === 'users') {
     addUser(req, res, doc);
@@ -351,16 +384,16 @@ function addShare(req, res, doc) {
  * @param  {Documment} doc the document to share
  * @return {undefined}
  */
-function removeShare(req, res, doc) {
+export function removeShare(req, res, doc) {
   if (['Form', 'Traveler', 'Binder'].indexOf(doc.constructor.modelName) === -1) {
-    return res.send(500, 'cannot handle the document type ' + doc.constructor.modelName);
+    return res.status(500).json('cannot handle the document type ' + doc.constructor.modelName);
   }
 
   removeFromList(req, res, doc);
 }
 
 
-function changeOwner(req, res, doc) {
+export function changeOwner(req, res, doc) {
   // get user id from name here
   var name = req.body.name;
   var nameFilter = ad.nameFilter.replace('_name', name);
@@ -370,18 +403,18 @@ function changeOwner(req, res, doc) {
     scope: 'sub'
   };
 
-  ldapClient.search(ad.searchBase, opts, false, function (ldapErr, result) {
+  ldapClient.legacySearch(ad.searchBase, opts, false, function (ldapErr, result) {
     if (ldapErr) {
       console.error(ldapErr.name + ' : ' + ldapErr.message);
-      return res.send(500, ldapErr.message);
+      return res.status(500).json(ldapErr.message);
     }
 
     if (result.length === 0) {
-      return res.send(400, name + ' is not found in AD!');
+      return res.status(400).json(name + ' is not found in AD!');
     }
 
     if (result.length > 1) {
-      return res.send(400, name + ' is not unique!');
+      return res.status(400).json(name + ' is not unique!');
     }
 
     var id = result[0].sAMAccountName.toLowerCase();
@@ -396,15 +429,9 @@ function changeOwner(req, res, doc) {
     doc.save(function (saveErr) {
       if (saveErr) {
         console.error(saveErr);
-        return res.send(500, saveErr.message);
+        return res.status(500).json(saveErr.message);
       }
-      return res.send(200, 'Owner is changed to ' + id);
+      return res.status(200).json('Owner is changed to ' + id);
     });
   });
 }
-
-export = {
-  addShare: addShare,
-  removeShare: removeShare,
-  changeOwner: changeOwner
-};

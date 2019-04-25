@@ -1,5 +1,9 @@
-var sanitize = require('sanitize-caja');
-var _ = require('underscore');
+/**
+ * Utilities for handling requests
+ */
+
+import * as sanitizeCaja from 'sanitize-caja';
+import * as _ from 'underscore';
 
 /**
  * Check the property list of http request. Set the property to null if it is
@@ -9,7 +13,7 @@ var _ = require('underscore');
  * @param  {[String]} names The property list to check against
  * @return {Function}       The middleware
  */
-function filter(list, names) {
+export function filter(list, names) {
   return function (req, res, next) {
     var k;
     var found = false;
@@ -33,7 +37,7 @@ function filter(list, names) {
 
 function sanitizeJson(input) {
   var jsonString = JSON.stringify(input);
-  jsonString = sanitize(jsonString);
+  jsonString = sanitizeCaja(jsonString);
   var output = null;
   try {
     output = JSON.parse(jsonString);
@@ -49,12 +53,12 @@ function sanitizeJson(input) {
  * @param  {[String]} names The list to sanitize
  * @return {Function}       The middleware
  */
-function sanitizeMw(list, names) {
+export function sanitize(list, names) {
   return function (req, res, next) {
     names.forEach(function (n) {
       if (Object.prototype.hasOwnProperty.call(req[list], n)) {
         if (_.isString(req[list][n])) {
-          req[list][n] = sanitize(req[list][n]);
+          req[list][n] = sanitizeCaja(req[list][n]);
         }
 
         if (_.isObject(req[list][n]) || _.isArray(req[list][n])) {
@@ -72,7 +76,7 @@ function sanitizeMw(list, names) {
  * @param  {[String]}  names The property list to check
  * @return {Function}        The middleware
  */
-function hasAll(list, names) {
+export function hasAll(list, names) {
   return function (req, res, next) {
     var i;
     var miss = false;
@@ -95,7 +99,7 @@ function hasAll(list, names) {
  * @param  {Model} collection     the collection model
  * @return {Function}             the middleware
  */
-function exist(pName, collection) {
+export function exist(pName, collection) {
   return function (req, res, next) {
     collection.findById(req.params[pName]).exec(function (err, item) {
       if (err) {
@@ -119,7 +123,7 @@ function exist(pName, collection) {
  * @param  {[Number]} sList the allowed status list
  * @return {Function}       the middleware
  */
-function status(pName, sList) {
+export function status(pName, sList) {
   return function (req, res, next) {
     var s = req[req.params[pName]].status;
     if (sList.indexOf(s) === -1) {
@@ -135,7 +139,7 @@ function status(pName, sList) {
  * @param  {Boolean} a    true or false
  * @return {Function}     the middleware
  */
-function archived(pName, a) {
+export function archived(pName, a) {
   return function (req, res, next) {
     var arch = req[req.params[pName]].archived;
     if (a !== arch) {
@@ -151,7 +155,7 @@ access := -1 // no access
         | 1  // write
 *****/
 
-function getAccess(req, doc) {
+export function getAccess(req, doc) {
   if (doc.publicAccess === 1) {
     return 1;
   }
@@ -183,7 +187,7 @@ function getAccess(req, doc) {
   return -1;
 }
 
-function canWrite(req, doc) {
+export function canWrite(req, doc) {
   return getAccess(req, doc) === 1;
 }
 
@@ -193,7 +197,7 @@ function canWrite(req, doc) {
  * @param  {String} pName the document to check
  * @return {Function}     the middleware
  */
-function canWriteMw(pName) {
+export function canWriteMw(pName) {
   return function (req, res, next) {
     if (!canWrite(req, req[req.params[pName]])) {
       return res.send(403, 'you are not authorized to access this resource');
@@ -203,7 +207,7 @@ function canWriteMw(pName) {
 }
 
 
-function canRead(req, doc) {
+export function canRead(req, doc) {
   return getAccess(req, doc) >= 0;
 }
 
@@ -212,7 +216,7 @@ function canRead(req, doc) {
  * @param  {String} pName the parameter name identifying the object
  * @return {Function}     the middleware
  */
-function canReadMw(pName) {
+export function canReadMw(pName) {
   return function (req, res, next) {
     if (!canRead(req, req[req.params[pName]])) {
       return res.send(403, 'you are not authorized to access this resource');
@@ -221,7 +225,7 @@ function canReadMw(pName) {
   };
 }
 
-function isOwner(req, doc) {
+export function isOwner(req, doc) {
   if (doc.createdBy === req.session.userid && !doc.owner) {
     return true;
   }
@@ -236,7 +240,7 @@ function isOwner(req, doc) {
  * @param  {String}  pName the object's id to check
  * @return {Function}      the middleware
  */
-function isOwnerMw(pName) {
+export function isOwnerMw(pName) {
   return function (req, res, next) {
     if (!isOwner(req, req[req.params[pName]])) {
       return res.send(403, 'you are not authorized to access this resource');
@@ -245,7 +249,7 @@ function isOwnerMw(pName) {
   };
 }
 
-function getSharedWith(sharedWith, name) {
+export function getSharedWith(sharedWith, name) {
   var i;
   if (sharedWith.length === 0) {
     return -1;
@@ -258,7 +262,7 @@ function getSharedWith(sharedWith, name) {
   return -1;
 }
 
-function getSharedGroup(sharedGroup, id) {
+export function getSharedGroup(sharedGroup, id) {
   var i;
   if (sharedGroup.length === 0) {
     return -1;
@@ -270,22 +274,3 @@ function getSharedGroup(sharedGroup, id) {
   }
   return -1;
 }
-
-
-export = {
-  filter: filter,
-  hasAll: hasAll,
-  sanitize: sanitizeMw,
-  exist: exist,
-  status: status,
-  archived: archived,
-  canRead: canRead,
-  canReadMw: canReadMw,
-  canWrite: canWrite,
-  canWriteMw: canWriteMw,
-  isOwner: isOwner,
-  isOwnerMw: isOwnerMw,
-  getAccess: getAccess,
-  getSharedWith: getSharedWith,
-  getSharedGroup: getSharedGroup
-};

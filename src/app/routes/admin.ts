@@ -1,6 +1,10 @@
-var auth = require('../lib/auth');
+/**
+ * Implement admin route handlers
+ */
 
-module.exports = function (app) {
+import * as auth from '../lib/auth';
+
+export function init(app) {
   app.get('/admin/', auth.ensureAuthenticated, function (req, res) {
     if (req.session.roles === undefined || req.session.roles.indexOf('admin') === -1) {
       return res.send(403, 'only admin allowed');

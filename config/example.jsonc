@@ -50,7 +50,11 @@
       // "sslCRL": "",
 
       // Use the "new" URL parser (Remove deprecation warning in Mongoose 5.x!)
-      "useNewUrlParser": true
+      "useNewUrlParser": true,
+      // Force use of  createIndex() instead of ensureIndex()
+      "useCreateIndex": true,
+      // Use `findOneAndUpdate()` instead of deprecated `findAndModify()`
+      "useFindAndModify": false
     }
   },
   "cas": {
@@ -73,5 +77,39 @@
     //  // Useful for testing with self-signed certs
     //  "rejectUnauthorized": true
     //}
+  },
+  "ad": {
+    "url": "ldap://your/service",
+    "adminDn": "cn=svc_cf-user,ou=Service Accounts,dc=...",
+    "adminPassword": "password",
+    "searchBase": "ou=...,dc=...",
+    "searchFilter": "(&(objectClass=user)(sAMAccountName=_id)(company=FRIB))",
+    "nameFilter": "(&(objectClass=user)(displayName=_name)(company=FRIB))",
+    "groupSearchBase": "ou=...,dc=...",
+    "groupSearchFilter": "(&(objectClass=group)(sAMAccountName=_id))",
+    "objAttributes": ["sAMAccountName","displayName","company", "mail", "telephoneNumber", "mobile", "physicalDeliveryOfficeName"],
+    "memberAttributes": ["sAMAccountName","displayName","company", "mail", "telephoneNumber", "mobile", "physicalDeliveryOfficeName", "memberOf"],
+    "groupAttributes": ["sAMAccountName","displayName","mail"],
+    "rawAttributes": ["thumbnailPhoto"]
+  },
+  "aliases": {
+    // Maps current group name to previous group name
+    //"group.new.name" : "goup.old.name"
+  },
+  "apiusers": {
+    // Credentials  for API
+    //"username": "password"
+  },
+  "userphotos": {
+    // location of user photo cache directory
+    //"root": "path/to/cache",
+    // Maximum age for user photos (seconds)
+    //"maxAge": 10000
+  },
+  "uploads": {
+    // location of uploaded directory
+    //"root": "path/to/cache",
+    // Maximum file size (MB)
+    //"maxSize": 10
   }
 }

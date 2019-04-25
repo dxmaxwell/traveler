@@ -1,11 +1,15 @@
-var authConfig = require('../config/config').auth;
+/**
+ * Implements general handlers
+ */
 
-exports.main = function (req, res) {
+// var authConfig = require('../config/config').auth;
+
+export function main(req, res) {
   // console.log(req.session);
   res.render('main');
 };
 
-exports.logout = function (req, res) {
+export function logout(req, res) {
   if (req.session) {
     req.session.destroy(function (err) {
       if (err) {
@@ -13,9 +17,9 @@ exports.logout = function (req, res) {
       }
     });
   }
-  if (res.proxied) {
-    res.redirect(authConfig.proxied_cas + '/logout');
-  } else {
-    res.redirect(authConfig.cas + '/logout');
-  }
+  // if (res.proxied) {
+  //   res.redirect(authConfig.proxied_cas + '/logout');
+  // } else {
+  //   res.redirect(authConfig.cas + '/logout');
+  // }
 };

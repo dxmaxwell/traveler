@@ -1,27 +1,79 @@
-// authentication and authorization functions
-var Client = require('cas.js');
-var url = require('url');
-var config = require('../config/config.js');
-var ad = config.ad;
-var auth = config.auth;
-var alias = config.alias;
-// var pause = require('pause');
+/**
+ *  authentication and authorization functions
+ */
+import * as url from 'url';
 
-var apiUsers = config.api.users;
+import Client = require('cas.js');
 
-var ldapClient = require('../lib/ldap-client');
+import * as ldapjs from './ldap-client';
 
-var mongoose = require('mongoose');
-var User = mongoose.model('User');
+import { User } from '../model/user';
 
-// validation of ticket is with the lan, and therefore url does not need to be proxied.
-var cas = new Client({
-  base_url: auth.cas,
-  service: auth.login_service,
-  version: 1.0
-});
+interface AliasConfig {
+  [key: string]: string | undefined;
+}
 
-function proxied(req, res, next) {
+interface ADConfig {
+  searchFilter: string;
+  objAttributes: string[];
+  searchBase: string;
+  memberAttributes: string[];
+}
+
+interface AuthConfig {
+  cas: string;
+  service: string;
+}
+
+interface ApiUserConfig {
+  [key: string]: string | undefined;
+}
+
+let ad: ADConfig;
+
+export function setADConfig(config: ADConfig) {
+  ad = config;
+}
+
+let cas: Client;
+
+let authConfig: AuthConfig;
+
+export function setAuthConfig(config: AuthConfig) {
+  authConfig = config;
+  cas = new Client({
+    base_url: authConfig.cas,
+    service: authConfig.service,
+    version: 1.0,
+  });
+}
+
+let ldapClient: ldapjs.Client;
+
+export function setLDAPClient(client: ldapjs.Client) {
+  ldapClient = client;
+}
+
+let alias: AliasConfig = {};
+
+export function setAliases(a: AliasConfig) {
+  alias = a;
+}
+
+let apiUsers: ApiUserConfig = {};
+
+export function setAPIUsers(users: ApiUserConfig) {
+  apiUsers = users;
+}
+
+// var config = require('../config/config.js');
+// var ad = config.ad;
+// var auth = config.auth;
+
+// var apiUsers = config.api.users;
+
+
+export function proxied(req, res, next) {
   if (req.get('x-forwarded-host') && req.get('x-forwarded-host') === auth.proxy) {
     req.proxied = true;
     req.proxied_prefix = url.parse(auth.proxied_service).pathname;
@@ -50,7 +102,7 @@ function filterGroup(a) {
   return output;
 }
 
-function ensureAuthenticated(req, res, next) {
+export function ensureAuthenticated(req, res, next) {
   var ticketUrl = url.parse(req.url, true);
   if (!!req.session.userid) {
     // logged in already
@@ -66,11 +118,11 @@ function ensureAuthenticated(req, res, next) {
   } else if (!!req.query.ticket) {
     // just kicked back by CAS
     // var halt = pause(req);
-    if (req.proxied) {
-      cas.service = auth.login_proxied_service;
-    } else {
-      cas.service = auth.login_service;
-    }
+    // if (req.proxied) {
+    //   cas.service = auth.login_proxied_service;
+    // } else {
+    //   cas.service = auth.login_service;
+    // }
     // validate the ticket
     cas.validate(req.query.ticket, function (err, casresponse, result) {
       if (err) {
@@ -89,7 +141,7 @@ function ensureAuthenticated(req, res, next) {
         };
 
         // query ad about other attribute
-        ldapClient.search(ad.searchBase, opts, false, function (err, result) {
+        ldapClient.legacySearch(ad.searchBase, opts, false, function (err, result) {
           if (err) {
             console.error(err.name + ' : ' + err.message);
             return res.send(500, 'something wrong with ad');
@@ -179,14 +231,14 @@ function ensureAuthenticated(req, res, next) {
 }
 
 
-function sessionLocals(req, res, next) {
+export function sessionLocals(req, res, next) {
   res.locals.session = req.session;
   res.locals.prefix =  req.proxied ? req.proxied_prefix : '';
   next();
 }
 
 
-function checkAuth(req, res, next) {
+export function checkAuth(req, res, next) {
   if (req.query.ticket) {
     ensureAuthenticated(req, res, next);
   } else {
@@ -194,7 +246,7 @@ function checkAuth(req, res, next) {
   }
 }
 
-function verifyRole(role) {
+export function verifyRole(role) {
   return function (req, res, next) {
     // console.log(req.session);
     if (req.session.roles) {
@@ -221,7 +273,7 @@ function notKnown(cred) {
   return true;
 }
 
-function basicAuth(req, res, next) {
+export function basicAuth(req, res, next) {
   var cred = basic(req);
   if (!cred || notKnown(cred)) {
     res.set('WWW-Authenticate', 'Basic realm="api"');
@@ -230,11 +282,3 @@ function basicAuth(req, res, next) {
   next();
 }
 
-module.exports = {
-  ensureAuthenticated: ensureAuthenticated,
-  verifyRole: verifyRole,
-  checkAuth: checkAuth,
-  sessionLocals: sessionLocals,
-  basicAuth: basicAuth,
-  proxied: proxied
-};

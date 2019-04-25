@@ -1,19 +1,65 @@
-var ad = require('../config/ad.json');
+/**
+ * Implement User route handlers
+ */
+import * as fs from 'fs';
 
-var ldapClient = require('../lib/ldap-client');
+import * as express from 'express';
 
-var mongoose = require('mongoose');
-var User = mongoose.model('User');
+import * as auth from '../lib/auth';
+import * as ldapjs from '../lib/ldap-client';
 
-var auth = require('../lib/auth');
-var authConfig = require('../config/config').auth;
+import {
+  User,
+} from '../model/user';
 
-var fs = require('fs');
-var pending_photo = {};
-var options = {
-  root: __dirname + '/../userphoto/',
-  maxAge: 30 * 24 * 3600 * 1000
+interface ADConfig {
+  searchFilter: string;
+  rawAttributes: string[];
+  objAttributes: string[];
+  searchBase: string;
+  nameFilter: string;
+  groupSearchFilter: string;
+  groupSearchBase: string;
+  groupAttributes: string[];
+}
+
+const pending_photo = {};
+
+const options = {
+  root: '',
+  maxAge: 0,
 };
+
+export function setUserPhotoCacheRoot(path: string) {
+  options.root = path;
+}
+
+export function setUserPhotoCacheMaxAge(age: number) {
+  options.maxAge = age;
+}
+
+let serviceUrl = '';
+
+export function getServiceUrl(): string {
+  return serviceUrl;
+}
+
+export function setServiceUrl(url: string) {
+  serviceUrl = url;
+}
+
+let ad: ADConfig;
+
+export function setADConfig(config: ADConfig) {
+  ad = config;
+}
+
+let ldapClient: ldapjs.Client;
+
+export function setLDAPClient(client: ldapjs.Client) {
+  ldapClient = client;
+}
+
 
 function cleanList(id, f) {
   var res_list = pending_photo[id];
@@ -28,19 +74,19 @@ function fetch_photo_from_ad(id) {
     attributes: ad.rawAttributes,
     scope: 'sub'
   };
-  ldapClient.search(ad.searchBase, opts, true, function (err, result) {
+  ldapClient.legacySearch(ad.searchBase, opts, true, function (err, result) {
     if (err) {
       console.error(err);
       cleanList(id, function (res) {
-        return res.send(500, 'ldap error');
+        return res.status(500).send('ldap error');
       });
     } else if (result.length === 0) {
       cleanList(id, function (res) {
-        return res.send(400, id + ' is not found');
+        return res.status(400).send(id + ' is not found');
       });
     } else if (result.length > 1) {
       cleanList(id, function (res) {
-        return res.send(400, id + ' is not unique!');
+        return res.status(400).send(id + ' is not unique!');
       });
     } else if (result[0].thumbnailPhoto && result[0].thumbnailPhoto.length) {
       if (!fs.existsSync(options.root + id + '.jpg')) {
@@ -63,7 +109,7 @@ function fetch_photo_from_ad(id) {
       }
     } else {
       cleanList(id, function (res) {
-        return res.send(400, id + ' photo is not found');
+        return res.status(400).send(id + ' photo is not found');
       });
     }
   });
@@ -76,17 +122,17 @@ function updateUserProfile(user, res) {
     attributes: ad.objAttributes,
     scope: 'sub'
   };
-  ldapClient.search(ad.searchBase, opts, false, function (ldapErr, result) {
+  ldapClient.legacySearch(ad.searchBase, opts, false, function (ldapErr, result) {
     if (ldapErr) {
-      return res.json(500, ldapErr);
+      return res.status(500).json(ldapErr);
     }
     if (result.length === 0) {
-      return res.json(500, {
+      return res.status(500).json({
         error: user._id + ' is not found!'
       });
     }
     if (result.length > 1) {
-      return res.json(500, {
+      return res.status(500).json({
         error: user._id + ' is not unique!'
       });
     }
@@ -98,7 +144,7 @@ function updateUserProfile(user, res) {
       mobile: result[0].mobile
     }, function (err) {
       if (err) {
-        return res.json(500, err);
+        return res.status(500).json(err);
       }
       return res.send(204);
     });
@@ -114,18 +160,18 @@ function addUser(req, res) {
     scope: 'sub'
   };
 
-  ldapClient.search(ad.searchBase, opts, false, function (ldapErr, result) {
+  ldapClient.legacySearch(ad.searchBase, opts, false, function (ldapErr, result) {
     if (ldapErr) {
       console.error(ldapErr.name + ' : ' + ldapErr.message);
-      return res.json(500, ldapErr);
+      return res.status(500).json(ldapErr);
     }
 
     if (result.length === 0) {
-      return res.send(404, req.body.name + ' is not found in AD!');
+      return res.status(404).send(req.body.name + ' is not found in AD!');
     }
 
     if (result.length > 1) {
-      return res.send(400, req.body.name + ' is not unique!');
+      return res.status(400).send(req.body.name + ' is not unique!');
     }
     var roles = [];
     if (req.body.manager) {
@@ -147,17 +193,17 @@ function addUser(req, res) {
     user.save(function (err, newUser) {
       if (err) {
         console.error(err);
-        return res.send(500, err.message);
+        return res.status(500).send(err.message);
       }
-      var url = (req.proxied ? authConfig.proxied_service : authConfig.service) + '/users/' + newUser._id;
+      var url = serviceUrl + '/users/' + newUser._id;
       res.set('Location', url);
-      return res.send(201, 'The new user is at <a target="_blank" href="' + url + '">' + url + '</a>');
+      return res.status(201).send('The new user is at <a target="_blank" href="' + url + '">' + url + '</a>');
     });
 
   });
 }
 
-module.exports = function (app) {
+export function init(app: express.Application) {
 
   app.get('/usernames/:name', auth.ensureAuthenticated, function (req, res) {
     User.findOne({
@@ -165,16 +211,17 @@ module.exports = function (app) {
     }).exec(function (err, user) {
       if (err) {
         console.error(err);
-        return res.send(500, err.message);
+        return res.status(500).send(err.message);
       }
       if (user) {
         return res.render('user', {
           user: user,
           myRoles: req.session.roles,
-          prefix: req.proxied ? req.proxied_prefix : ''
+          // prefix: req.proxied ? req.proxied_prefix : ''
+          prefix: ''
         });
       }
-      return res.send(404, req.params.name + ' not found');
+      return res.status(404).send(req.params.name + ' not found');
     });
   });
 
@@ -182,11 +229,11 @@ module.exports = function (app) {
   app.post('/users/', auth.ensureAuthenticated, function (req, res) {
 
     if (req.session.roles === undefined || req.session.roles.indexOf('admin') === -1) {
-      return res.send(403, 'only admin allowed');
+      return res.status(403).send('only admin allowed');
     }
 
     if (!req.body.name) {
-      return res.send(400, 'need to know name');
+      return res.status(400).send('need to know name');
     }
 
     // check if already in db
@@ -194,11 +241,11 @@ module.exports = function (app) {
       name: req.body.name
     }).exec(function (err, user) {
       if (err) {
-        return res.send(500, err.message);
+        return res.status(500).send(err.message);
       }
       if (user) {
-        var url = (req.proxied ? authConfig.proxied_service : authConfig.service) + '/users/' + user._id;
-        return res.send(200, 'The user is at <a target="_blank" href="' + url + '">' + url + '</a>');
+        var url = serviceUrl + '/users/' + user._id;
+        return res.status(200).send('The user is at <a target="_blank" href="' + url + '">' + url + '</a>');
       }
       addUser(req, res);
     });
@@ -207,12 +254,12 @@ module.exports = function (app) {
 
   app.get('/users/json', auth.ensureAuthenticated, function (req, res) {
     if (req.session.roles === undefined || req.session.roles.indexOf('admin') === -1) {
-      return res.send(403, 'You are not authorized to access this resource. ');
+      return res.status(403).send('You are not authorized to access this resource. ');
     }
     User.find().exec(function (err, users) {
       if (err) {
         console.error(err);
-        return res.json(500, {
+        return res.status(500).json({
           error: err.message
         });
       }
@@ -227,25 +274,26 @@ module.exports = function (app) {
     }).exec(function (err, user) {
       if (err) {
         console.error(err);
-        return res.send(500, err.message);
+        return res.status(500).send(err.message);
       }
       if (user) {
         return res.render('user', {
           user: user,
           myRoles: req.session.roles,
-          prefix: req.proxied ? req.proxied_prefix : ''
+          // prefix: req.proxied ? req.proxied_prefix : ''
+          prefix: ''
         });
       }
-      return res.send(404, req.params.id + ' has never logged into the application.');
+      return res.status(404).send(req.params.id + ' has never logged into the application.');
     });
   });
 
   app.put('/users/:id', auth.ensureAuthenticated, function (req, res) {
     if (req.session.roles === undefined || req.session.roles.indexOf('admin') === -1) {
-      return res.send(403, 'You are not authorized to access this resource. ');
+      return res.status(403).send('You are not authorized to access this resource. ');
     }
     if (!req.is('json')) {
-      return res.json(415, {
+      return res.status(415).json({
         error: 'json request expected.'
       });
     }
@@ -254,7 +302,7 @@ module.exports = function (app) {
     }, req.body).exec(function (err) {
       if (err) {
         console.error(err);
-        return res.json(500, {
+        return res.status(500).json({
           error: err.message
         });
       }
@@ -269,8 +317,8 @@ module.exports = function (app) {
     }).exec(function (err, user) {
       if (err) {
         console.error(err);
-        return res.json(500, {
-          error: err.mesage
+        return res.status(500).json({
+          error: err.message
         });
       }
       return res.json(user);
@@ -279,19 +327,19 @@ module.exports = function (app) {
 
   app.get('/users/:id/refresh', auth.ensureAuthenticated, function (req, res) {
     if (req.session.roles === undefined || req.session.roles.indexOf('admin') === -1) {
-      return res.send(403, 'You are not authorized to access this resource. ');
+      return res.status(403).send('You are not authorized to access this resource. ');
     }
     User.findOne({
       _id: req.params.id
     }).exec(function (err, user) {
       if (err) {
         console.error(err);
-        return res.send(500, err.message);
+        return res.status(500).send(err.message);
       }
       if (user) {
         updateUserProfile(user, res);
       } else {
-        return res.send(404, req.params.id + ' is not in the application.');
+        return res.status(404).send(req.params.id + ' is not in the application.');
       }
     });
   });
@@ -300,7 +348,7 @@ module.exports = function (app) {
   // resource /adusers
 
   app.get('/adusers/', auth.ensureAuthenticated, function (req, res) {
-    return res.send(200, 'Please provide the user id');
+    return res.status(200).send('Please provide the user id');
   });
 
   app.get('/adusers/:id', auth.ensureAuthenticated, function (req, res) {
@@ -311,17 +359,17 @@ module.exports = function (app) {
       attributes: ad.objAttributes,
       scope: 'sub'
     };
-    ldapClient.search(ad.searchBase, opts, false, function (err, result) {
+    ldapClient.legacySearch(ad.searchBase, opts, false, function (err, result) {
       if (err) {
-        return res.json(500, err);
+        return res.status(500).json(err);
       }
       if (result.length === 0) {
-        return res.json(500, {
+        return res.status(500).json({
           error: req.params.id + ' is not found!'
         });
       }
       if (result.length > 1) {
-        return res.json(500, {
+        return res.status(500).json({
           error: req.params.id + ' is not unique!'
         });
       }
@@ -360,9 +408,9 @@ module.exports = function (app) {
       },
       scope: 'sub'
     };
-    ldapClient.search(ad.searchBase, opts, false, function (err, result) {
+    ldapClient.legacySearch(ad.searchBase, opts, false, function (err, result) {
       if (err) {
-        return res.json(500, err);
+        return res.status(500).json(err);
       }
       if (result.length === 0) {
         return res.json([]);
@@ -389,9 +437,9 @@ module.exports = function (app) {
       attributes: ad.groupAttributes,
       scope: 'sub'
     };
-    ldapClient.search(ad.groupSearchBase, opts, false, function (err, result) {
+    ldapClient.legacySearch(ad.groupSearchBase, opts, false, function (err, result) {
       if (err) {
-        return res.send(500, err.message);
+        return res.status(500).send(err.message);
       }
       if (result.length === 0) {
         return res.json([]);

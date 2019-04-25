@@ -1,10 +1,92 @@
-/*jslint es5: true*/
+/**
+ * Traveler model definition
+ */
 
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
-var ObjectId = Schema.Types.ObjectId;
+import * as mongoose from 'mongoose';
 
-var share = require('./share.js');
+import * as share from './share.js';
+
+type ObjectId = mongoose.Types.ObjectId;
+
+const Schema = mongoose.Schema;
+const ObjectId = Schema.Types.ObjectId;
+
+export interface IForm {
+  _id: any;
+  html: string;
+  activatedOn: Date[];
+  reference: ObjectId;
+  alias: string;
+}
+
+export interface IUser {
+  _id: any;
+  username: string;
+}
+
+export interface ITraveler {
+  title?: string;
+  description?: string;
+  devices?: string[];
+  locations?: string[];
+  manPower?: IUser[];
+  status: number;
+  createdBy?: string;
+  createdOn?: Date;
+  clonedBy?: string;
+  clonedFrom?: ObjectId;
+  updatedBy?: string;
+  updatedOn?: Date;
+  archivedOn?: Date;
+  owner?: string;
+  transferredOn?: Date;
+  deadline?: Date;
+  publicAccess?: number;
+  sharedWith?: share.IUser[];
+  sharedGroup?: share.IGroup[];
+  referenceForm?: ObjectId;
+  forms?: IForm[];
+  activeForm?: string;
+  data?: ObjectId[];
+  notes?: ObjectId[];
+  totalInput?: number;
+  finishedInput?: number;
+  archived?: boolean;
+}
+
+export interface Traveler extends ITraveler, mongoose.Document {
+  // nothing extra right now
+}
+
+export interface ITravelerData {
+  traveler: ObjectId;
+  name?: string;
+  value?: any;
+  file?: {
+    path: string;
+    encoding: string;
+    mimetype: string;
+  };
+  inputType?: string;
+  inputBy?: string;
+  inputOn?: Date;
+}
+
+export interface TravelerData extends ITravelerData, mongoose.Document {
+  // nothing extra right now
+}
+
+export interface ITravelerNote {
+  traveler: ObjectId;
+  name?: string;
+  value?: string;
+  inputBy?: string;
+  inputOn?: Date;
+}
+
+export interface TravelerNote extends ITravelerNote, mongoose.Document {
+  // nothing extra right now
+}
 
 
 /**
@@ -15,7 +97,7 @@ var share = require('./share.js');
  * alias : a name for convenience to distinguish forms.
  */
 
-var form = new Schema({
+const formSchema = new Schema({
   html: String,
   activatedOn: [Date],
   reference: ObjectId,
@@ -23,7 +105,7 @@ var form = new Schema({
 });
 
 
-var user = new Schema({
+const userSchema = new Schema({
   _id: String,
   username: String
 });
@@ -42,12 +124,12 @@ var user = new Schema({
  *               | -1 // no access
  */
 
-var traveler = new Schema({
+const travelerSchema = new Schema({
   title: String,
   description: String,
   devices: [String],
   locations: [String],
-  manPower: [user],
+  manPower: [userSchema],
   status: {
     type: Number,
     default: 0
@@ -66,10 +148,10 @@ var traveler = new Schema({
     type: Number,
     default: 0
   },
-  sharedWith: [share.user],
-  sharedGroup: [share.group],
+  sharedWith: [share.userSchema],
+  sharedGroup: [share.groupSchema],
   referenceForm: ObjectId,
-  forms: [form],
+  forms: [formSchema],
   activeForm: String,
   data: [ObjectId],
   notes: [ObjectId],
@@ -97,7 +179,7 @@ var traveler = new Schema({
  *       | 'number'
  */
 
-var travelerData = new Schema({
+const travelerDataSchema = new Schema({
   traveler: ObjectId,
   name: String,
   value: Schema.Types.Mixed,
@@ -111,7 +193,7 @@ var travelerData = new Schema({
   inputOn: Date
 });
 
-var travelerNote = new Schema({
+const travelerNoteSchema = new Schema({
   traveler: ObjectId,
   name: String,
   value: String,
@@ -120,12 +202,6 @@ var travelerNote = new Schema({
 });
 
 
-var Traveler = mongoose.model('Traveler', traveler);
-var TravelerData = mongoose.model('TravelerData', travelerData);
-var TravelerNote = mongoose.model('TravelerNote', travelerNote);
-
-module.exports = {
-  Traveler: Traveler,
-  TravelerData: TravelerData,
-  TravelerNote: TravelerNote
-};
+export const Traveler = mongoose.model<Traveler>('Traveler', travelerSchema);
+export const TravelerData = mongoose.model<TravelerData>('TravelerData', travelerDataSchema);
+export const TravelerNote = mongoose.model<TravelerNote>('TravelerNote', travelerNoteSchema);

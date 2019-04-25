@@ -1,8 +1,75 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
-var ObjectId = Schema.Types.ObjectId;
+/**
+ * Binder model
+ */
 
-var share = require('./share.js');
+import * as mongoose from 'mongoose';
+
+import * as share from './share.js';
+
+type ObjectId = mongoose.Types.ObjectId;
+
+
+interface ISpec {
+  _id: any;
+  status?: number;
+  totalInput?: number;
+  finishedInput?: number;
+  totalValue?: number;
+  finishedValue?: number;
+  inProgressValue?: number;
+}
+
+export interface IWork {
+  alias?: string;
+  refType: 'traveler' | 'binder';
+  addedOn?: Date;
+  addedBy?: string;
+  status?: number;
+  finished?: number;
+  inProgress?: number;
+  priority?: number;
+  sequence?: number;
+  value?: number;
+  color: 'green' | 'yellow' | 'red' | 'blue' | 'black';
+}
+
+export interface Work extends IWork, mongoose.Document {
+  // nothing extra right now
+}
+
+export interface IBinder {
+  title?: string;
+  description?: string;
+  status?: number;
+  tags?: string[];
+  createdBy?: string;
+  createdOn?: Date;
+  clonedBy?: string;
+  clonedFrom?: ObjectId;
+  updatedBy?: string;
+  updatedOn?: Date;
+  archivedOn?: Date;
+  owner?: string;
+  transferredOn?: Date;
+  deadline?: Date;
+  publicAccess?: number;
+  sharedWith?: share.IUser[];
+  sharedGroup?: share.IGroup[];
+  works?: IWork[];
+  finishedValue?: number;
+  inProgressValue?: number;
+  totalValue?: number;
+  archived?: boolean;
+}
+
+export interface Binder extends IBinder, mongoose.Document {
+  updateWorkProgress(this: Binder, spec: ISpec);
+  updateProgress(this: Binder, cb: (err: any, Binder) => void);
+}
+
+const Schema = mongoose.Schema;
+const ObjectId = Schema.Types.ObjectId;
+
 
 /**
  * finished is the percentage of value that is completed.
@@ -11,7 +78,7 @@ var share = require('./share.js');
  * If status === 0, then finished = 0, and inProgress = 0;
  */
 
-var work = new Schema({
+const workSchema = new Schema({
   alias: String,
   refType: {
     type: String,
@@ -73,7 +140,7 @@ var work = new Schema({
  *         | 2 // completed
  */
 
-var binder = new Schema({
+const binderSchema = new Schema({
   title: String,
   description: String,
   status: {
@@ -95,9 +162,9 @@ var binder = new Schema({
     type: Number,
     default: 0
   },
-  sharedWith: [share.user],
-  sharedGroup: [share.group],
-  works: [work],
+  sharedWith: [share.userSchema],
+  sharedGroup: [share.groupSchema],
+  works: [workSchema],
   finishedValue: {
     type: Number,
     default: 0,
@@ -119,8 +186,8 @@ var binder = new Schema({
   }
 });
 
-binder.methods.updateWorkProgress = function (spec) {
-  var w = this.works.id(spec._id);
+binderSchema.methods.updateWorkProgress = function(this: Binder, spec: ISpec) {
+  const w = (this.works as mongoose.Types.DocumentArray<Work>).id(spec._id);
   if (!w) {
     return;
   }
@@ -135,7 +202,7 @@ binder.methods.updateWorkProgress = function (spec) {
     w.inProgress = 0;
   } else {
     if (w.refType === 'traveler') {
-      work.finished = 0;
+      w.finished = 0;
       if (spec.totalInput === 0) {
         w.inProgress = 1;
       } else {
@@ -154,7 +221,7 @@ binder.methods.updateWorkProgress = function (spec) {
 };
 
 
-binder.methods.updateProgress = function (cb) {
+binderSchema.methods.updateProgress = function (this: Binder, cb: (err: any, binder?: Binder) => void) {
   var works = this.works;
   var totalValue = 0;
   var finishedValue = 0;
@@ -181,8 +248,4 @@ binder.methods.updateProgress = function (cb) {
   }
 };
 
-var Binder = mongoose.model('Binder', binder);
-
-module.exports = {
-  Binder: Binder
-};
+export const Binder = mongoose.model<Binder>('Binder', binderSchema);

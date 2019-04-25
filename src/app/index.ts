@@ -12,18 +12,36 @@ import * as util from 'util';
 import rc = require('rc');
 
 import * as bodyparser from 'body-parser';
+import * as compression from 'compression';
 import * as express from 'express';
 import * as session from 'express-session';
+import * as methodOverride from 'method-override';
 import * as mongoose from 'mongoose';
 import * as morgan from 'morgan';
+import * as multer from 'multer';
 import * as favicon from 'serve-favicon';
 
-import * as auth from './shared/auth';
+import auth = require('./lib/auth');
+// import * as auth from './shared/auth';
 import * as handlers from './shared/handlers';
 import * as logging from './shared/logging';
 import * as promises from './shared/promises';
 import * as status from './shared/status';
 import * as tasks from './shared/tasks';
+
+import * as ldapjs from './lib/ldap-client';
+import * as share from './lib/share';
+
+import * as routes from './routes';
+import * as admin from './routes/admin';
+import * as binder from './routes/binder';
+// import device from './routes/device';
+import * as doc from './routes/doc';
+import * as form from './routes/form';
+import * as profile from './routes/profile';
+import * as traveler from './routes/traveler';
+import * as user from './routes/user';
+
 
 // package metadata
 interface Package {
@@ -55,6 +73,38 @@ interface Config {
     db: {};
     options: {};
   };
+  ad: {
+    url?: {};
+    adminDn?: {};
+    adminPassword?: {};
+    searchBase?: {};
+    searchFilter?: {};
+    nameFilter?: {};
+    groupSearchBase?: {};
+    groupSearchFilter?: {};
+    objAttributes?: {};
+    memberAttributes?: {};
+    groupAttributes?: {};
+    rawAttributes?: {};
+  };
+  cas: {
+    cas_url?: {};
+    service_base_url?: {};
+  };
+  aliases: {
+    [key: string]: string  | undefined;
+  };
+  apiusers: {
+    [key: string]: string | undefined;
+  };
+  userphotos: {
+    root: {};
+    maxAge: {};
+  };
+  uploads: {
+    root: {};
+    maxSize: {};
+  };
 }
 
 // application states (same as tasks.State, but avoids the dependency)
@@ -62,6 +112,9 @@ export type State = 'STARTING' | 'STARTED' | 'STOPPING' | 'STOPPED';
 
 // application singleton
 let app: express.Application;
+
+// AD Client
+let adClient: ldapjs.Client | null = null;
 
 // application logging
 export let info = logging.info;
@@ -77,6 +130,8 @@ const activeResponses = new Set<express.Response>();
 const activeSockets = new Set<net.Socket>();
 let activeFinished = Promise.resolve();
 
+const stat = util.promisify(fs.stat);
+const mkdir = util.promisify(fs.mkdir);
 const readFile = util.promisify(fs.readFile);
 
 // read the application name and version
@@ -123,6 +178,8 @@ async function doStart(): Promise<express.Application> {
   info('Application starting');
 
   app = express();
+
+  app.enable('strict routing');
 
   const [name, version] = await readNameVersion();
   app.set('name', name);
@@ -195,6 +252,26 @@ async function doStart(): Promise<express.Application> {
         // see http://mongoosejs.com/docs/connections.html
         useNewUrlParser: true,
       },
+    },
+    ad: {
+      // no defaults
+    },
+    cas: {
+      // no defaults
+    },
+    aliases: {
+      // no defaults
+    },
+    apiusers: {
+      // no defaults
+    },
+    userphotos: {
+      root: path.join(__dirname, '..', 'userphoto'),
+      maxAge: 30 * 24 * 3600,            // 30 days
+    },
+    uploads: {
+      root: path.join(__dirname, '..', 'uploads'),
+      maxSize: 10,                       // 10MB
     },
   };
 
@@ -291,6 +368,91 @@ async function doStart(): Promise<express.Application> {
     error('Mongoose connection error: %s', err);
   });
 
+  // Authentication Configuration
+  adClient = await ldapjs.Client.create({
+    url: String(cfg.ad.url),
+    bindDN: String(cfg.ad.adminDn),
+    bindCredentials: String(cfg.ad.adminPassword),
+    // TODO: Move to external configuration //
+    reconnect: true,
+    timeout: 15 * 1000,
+    idleTimeout: 10 * 1000,
+    connectTimeout: 10 * 1000,
+    //////////////////////////////////////////
+  });
+  info('LDAP client connected: %s', cfg.ad.url);
+  status.setComponentOk('LDAP Client', 'Connected');
+
+  adClient.on('connect', () => {
+    info('LDAP client reconnected: %s', cfg.ad.url);
+    status.setComponentOk('LDAP Client', 'Reconnected');
+  });
+
+  adClient.on('idle', () => {
+    info('LDAP client connection is idle');
+  });
+
+  adClient.on('close', () => {
+    warn('LDAP client connection is closed');
+  });
+
+  adClient.on('error', (err) => {
+    error('LDAP client connection: %s', err);
+  });
+
+  adClient.on('quietError', (err) => {
+    status.setComponentError('LDAP Client', '%s', err);
+  });
+
+  auth.setADConfig({
+    objAttributes: Array.isArray(cfg.ad.objAttributes) ? cfg.ad.objAttributes.map(String) : [],
+    searchBase: String(cfg.ad.searchBase),
+    searchFilter: String(cfg.ad.searchFilter),
+    memberAttributes: Array.isArray(cfg.ad.memberAttributes) ? cfg.ad.memberAttributes.map(String) : [],
+  });
+
+  auth.setAuthConfig({
+    cas: String(cfg.cas.cas_url),
+    service: String(cfg.cas.service_base_url),
+  });
+
+  auth.setAliases(cfg.aliases);
+
+  auth.setAPIUsers(cfg.apiusers);
+
+  auth.setLDAPClient(adClient);
+
+  // Configure the user photo cache directory
+  try {
+    const finfo = await stat(String(cfg.userphotos.root));
+    if (!finfo.isDirectory()) {
+      throw new Error(`User photo cache root is not a directory: ${cfg.userphotos.root}`);
+    }
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      throw err;
+    }
+    await mkdir(String(cfg.userphotos.root), { recursive: true });
+  }
+  info('User photo cache root: %s', cfg.userphotos.root);
+  info('User photo cache max age: %s', cfg.userphotos.maxAge);
+
+  // Configure the file uploads directory
+  try {
+    const finfo = await stat(String(cfg.uploads.root));
+    if (!finfo.isDirectory()) {
+      throw new Error(`File uploads root is not a directory: ${cfg.uploads.root}`);
+    }
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      throw err;
+    }
+    await mkdir(String(cfg.uploads.root), { recursive: true });
+  }
+  info('File uploads root: %s', cfg.uploads.root);
+  info('File uploads max size: %s', cfg.uploads.maxSize);
+
+
   // view engine configuration
   app.set('views', path.resolve(__dirname, '..', 'views'));
   app.set('view engine', 'pug');
@@ -316,13 +478,13 @@ async function doStart(): Promise<express.Application> {
   }));
 
   // Authentication handlers (must follow session middleware)
-  app.use(auth.getProvider().initialize());
+  // app.use(auth.getProvider().initialize()); // requires ./shared/auth.ts
 
   // Request logging configuration (must follow authc middleware)
-  morgan.token('remote-user', (req) => {
-    const username = auth.getUsername(req);
-    return username || 'anonymous';
-  });
+  // morgan.token('remote-user', (req) => {    // requires ./shared/auth.ts
+  //   const username = auth.getUsername(req);
+  //   return username || 'anonymous';
+  // });
 
   if (env === 'production') {
     app.use(morgan('short'));
@@ -336,26 +498,151 @@ async function doStart(): Promise<express.Application> {
   // static file configuration
   app.use(express.static(path.resolve(__dirname, '..', 'public')));
 
+  // Legacy middleware (consider removing) //
+
+  // Compress response bodies
+  app.use(compression());
+
+  // PUT and DELETE method support for old browsers
+  app.use(methodOverride());
+
+  // Handle multipart file uploads
+  app.use(multer({
+    dest: String(cfg.uploads.root),
+    limits: {
+      files: 1,
+      fileSize: Number(cfg.uploads.maxSize) * 1024 * 1024,
+    },
+  }).any());
+  // Adapt new version of Multer to old behavior where req.files is an Object!
+  app.use((req, res, next) => {
+    if (Array.isArray(req.files)) {
+      const obj = {};
+      for (const file of req.files) {
+        if (obj[file.fieldname]) {
+          warn('Request contains two or more files with the same fieldname: %s', file.fieldname);
+          continue;
+        }
+        obj[file.fieldname] = file;
+      }
+      req.files = obj;
+    }
+    next();
+  });
+  //////////////////////////////////////////
+
   // body-parser configuration
   app.use(bodyparser.json());
   app.use(bodyparser.urlencoded({
     extended: false,
   }));
 
-  app.get('/login', auth.getProvider().authenticate({ rememberParams: [ 'bounce' ]}), (req, res) => {
-    if (req.query.bounce) {
-      res.redirect(req.query.bounce);
-      return;
-    }
-    res.redirect(res.locals.basePath || '/');
+  app.get('/login', auth.ensureAuthenticated, (req, res) => {
+    // if (req.session.userid) {
+    //   return res.redirect((req as any).proxied ? auth.proxied_service : '/');
+    // }
+    // something wrong
+    res.status(400).send('please enable cookie in your browser');
   });
 
-  app.get('/logout', (req, res) => {
-    auth.getProvider().logout(req);
-    res.redirect(res.locals.basePath || '/');
-  });
+  // app.get('/login', auth.getProvider().authenticate({ rememberParams: [ 'bounce' ]}), (req, res) => {
+  //   if (req.query.bounce) {
+  //     res.redirect(req.query.bounce);
+  //     return;
+  //   }
+  //   res.redirect(res.locals.basePath || '/');
+  // });
+
+  app.get('/logout', routes.logout);
+
+  // app.get('/logout', (req, res) => {
+  //   auth.getProvider().logout(req);
+  //   res.redirect(res.locals.basePath || '/');
+  // });
 
   app.use('/status', status.router);
+
+  // Configure application routes
+  share.setADConfig({
+    groupAttributes: Array.isArray(cfg.ad.groupAttributes) ? cfg.ad.groupAttributes.map(String) : [],
+    groupSearchBase: cfg.ad.groupSearchBase ? String(cfg.ad.groupSearchBase) : '',
+    groupSearchFilter: cfg.ad.groupSearchFilter ? String(cfg.ad.groupSearchFilter) : '',
+    searchBase: cfg.ad.searchBase ? String(cfg.ad.searchBase) : '',
+    nameFilter: cfg.ad.nameFilter ? String(cfg.ad.nameFilter) : '',
+    objAttributes: Array.isArray(cfg.ad.objAttributes) ? cfg.ad.objAttributes.map(String) : [],
+  });
+  share.setLDAPClient(adClient);
+
+  form.setServiceUrl(String(cfg.cas.service_base_url));
+  form.init(app);
+
+  traveler.setServiceUrl(String(cfg.cas.service_base_url));
+  traveler.init(app);
+
+  binder.setServiceUrl(String(cfg.cas.service_base_url));
+  binder.init(app);
+
+  admin.init(app);
+
+  user.setADConfig({
+    groupAttributes: Array.isArray(cfg.ad.groupAttributes) ? cfg.ad.groupAttributes.map(String) : [],
+    groupSearchBase: cfg.ad.groupSearchBase ? String(cfg.ad.groupSearchBase) : '',
+    groupSearchFilter: cfg.ad.groupSearchFilter ? String(cfg.ad.groupSearchFilter) : '',
+    nameFilter: cfg.ad.nameFilter ? String(cfg.ad.nameFilter) : '',
+    objAttributes: Array.isArray(cfg.ad.objAttributes) ? cfg.ad.objAttributes.map(String) : [],
+    rawAttributes: Array.isArray(cfg.ad.rawAttributes) ? cfg.ad.rawAttributes.map(String) : [],
+    searchBase: cfg.ad.searchBase ? String(cfg.ad.searchBase) : '',
+    searchFilter: cfg.ad.searchFilter ? String(cfg.ad.searchFilter) : '',
+  });
+  user.setLDAPClient(adClient);
+  user.setServiceUrl(String(cfg.cas.service_base_url));
+  user.setUserPhotoCacheRoot(String(cfg.userphotos.root));
+  user.setUserPhotoCacheMaxAge(Number(cfg.userphotos.maxAge));
+  user.init(app);
+
+  profile.init(app);
+
+  // device(app);
+
+  doc.init(app);
+
+  app.get('/api', (req, res) => {
+    res.render('api', {
+      // prefix: req.proxied ? req.proxied_prefix : ''
+      prefix: '',
+    });
+  });
+
+  app.get('/', routes.main);
+
+  // app.get('/apis', function (req, res) {
+  //   res.redirect('https://' + req.host + ':' + api.get('port') + req.originalUrl);
+  // });
+
+  // if (app.get('env') === 'development') {
+  //   app.use(errorHandler());
+  // }
+
+  // api.enable('strict routing');
+  // {
+  //   api.set('port', process.env.APIPORT || config.api.port);
+  //   api.use(morgan('dev'));
+  //   // api.use(morgan({stream: access_logfile}));
+  //   api.use(auth.basicAuth);
+  //   api.use(compression());
+  //   // api.use(api.router); // not supported in Express 4.X
+  // };
+
+  // require('./routes/api')(api);
+
+  // var server = http.createServer(app).listen(app.get('port'), function () {
+  //   console.log('Express server listening on port ' + app.get('port'));
+  // });
+
+  // var apiserver = https.createServer(config.api.credentials, api).listen(api.get('port'), function () {
+  //   console.log('API server listening on port ' + api.get('port'));
+  // });
+
 
   // no handler found for request (404)
   app.use(handlers.notFoundHandler());
@@ -392,6 +679,17 @@ async function doStop(): Promise<void> {
     warn('Destroy %s active socket(s)', activeSockets.size);
     for (const soc of activeSockets) {
       soc.destroy();
+    }
+  }
+
+  // Unbind AD Client
+  if (adClient) {
+    try {
+      await adClient.unbind();
+      adClient.destroy();
+      info('LDAP client connection destroyed');
+    } catch (err) {
+      warn('LDAP client connection unbind failure: %s', err);
     }
   }
 
