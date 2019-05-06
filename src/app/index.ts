@@ -33,6 +33,7 @@ import * as ldapjs from './lib/ldap-client';
 import * as share from './lib/share';
 
 import * as admin from './routes/admin';
+import * as api from './routes/api';
 import * as binder from './routes/binder';
 // import device from './routes/device';
 import * as doc from './routes/doc';
@@ -609,45 +610,11 @@ async function doStart(): Promise<express.Application> {
 
   profile.init(app);
 
-  // device(app);
+  // device(app);  // Provides devices from external service (ie CCDB)
 
   doc.init(app);
 
-  app.get('/api', (req, res) => {
-    res.render('api', {
-      // prefix: req.proxied ? req.proxied_prefix : ''
-      prefix: '',
-    });
-  });
-
-  // app.get('/apis', function (req, res) {
-  //   res.redirect('https://' + req.host + ':' + api.get('port') + req.originalUrl);
-  // });
-
-  // if (app.get('env') === 'development') {
-  //   app.use(errorHandler());
-  // }
-
-  // api.enable('strict routing');
-  // {
-  //   api.set('port', process.env.APIPORT || config.api.port);
-  //   api.use(morgan('dev'));
-  //   // api.use(morgan({stream: access_logfile}));
-  //   api.use(auth.basicAuth);
-  //   api.use(compression());
-  //   // api.use(api.router); // not supported in Express 4.X
-  // };
-
-  // require('./routes/api')(api);
-
-  // var server = http.createServer(app).listen(app.get('port'), function () {
-  //   console.log('Express server listening on port ' + app.get('port'));
-  // });
-
-  // var apiserver = https.createServer(config.api.credentials, api).listen(api.get('port'), function () {
-  //   console.log('API server listening on port ' + api.get('port'));
-  // });
-
+  app.use(api.getRouter());
 
   // no handler found for request (404)
   app.use(handlers.notFoundHandler());
