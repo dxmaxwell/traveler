@@ -32,7 +32,6 @@ import * as tasks from './shared/tasks';
 import * as ldapjs from './lib/ldap-client';
 import * as share from './lib/share';
 
-import * as routes from './routes';
 import * as admin from './routes/admin';
 import * as binder from './routes/binder';
 // import device from './routes/device';
@@ -89,6 +88,7 @@ interface Config {
   };
   cas: {
     cas_url?: {};
+    service_url?: {};
     service_base_url?: {};
   };
   aliases: {
@@ -413,7 +413,7 @@ async function doStart(): Promise<express.Application> {
 
   auth.setAuthConfig({
     cas: String(cfg.cas.cas_url),
-    service: String(cfg.cas.service_base_url),
+    service: String(cfg.cas.service_base_url) + String(cfg.cas.service_url),
   });
 
   auth.setAliases(cfg.aliases);
@@ -477,6 +477,9 @@ async function doStart(): Promise<express.Application> {
     },
   }));
 
+  // Add session to response locals
+  app.use(auth.sessionLocals);
+
   // Authentication handlers (must follow session middleware)
   // app.use(auth.getProvider().initialize()); // requires ./shared/auth.ts
 
@@ -497,6 +500,9 @@ async function doStart(): Promise<express.Application> {
 
   // static file configuration
   app.use(express.static(path.resolve(__dirname, '..', 'public')));
+
+  // Redirect requests ending in '/' and set response locals 'basePath'
+  app.use(handlers.basePathHandler());
 
   // Legacy middleware (consider removing) //
 
@@ -538,31 +544,32 @@ async function doStart(): Promise<express.Application> {
   }));
 
   app.get('/login', auth.ensureAuthenticated, (req, res) => {
-    // if (req.session.userid) {
-    //   return res.redirect((req as any).proxied ? auth.proxied_service : '/');
-    // }
-    // something wrong
-    res.status(400).send('please enable cookie in your browser');
+    if (req.query.bounce) {
+      res.redirect(req.query.bounce);
+      return;
+    }
+    res.redirect(res.locals.basePath || '/');
   });
 
-  // app.get('/login', auth.getProvider().authenticate({ rememberParams: [ 'bounce' ]}), (req, res) => {
-  //   if (req.query.bounce) {
-  //     res.redirect(req.query.bounce);
-  //     return;
-  //   }
-  //   res.redirect(res.locals.basePath || '/');
-  // });
-
-  app.get('/logout', routes.logout);
-
-  // app.get('/logout', (req, res) => {
-  //   auth.getProvider().logout(req);
-  //   res.redirect(res.locals.basePath || '/');
-  // });
+  app.get('/logout', (req, res) => {
+    // auth.getProvider().logout(req);  // requires ./shared/auth.ts
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          error(err);
+        }
+      });
+    }
+    res.redirect(`${cfg.cas.cas_url}/logout`);
+  });
 
   app.use('/status', status.router);
 
   // Configure application routes
+  app.get('/', (req, res) => {
+    res.render('main');
+  });
+
   share.setADConfig({
     groupAttributes: Array.isArray(cfg.ad.groupAttributes) ? cfg.ad.groupAttributes.map(String) : [],
     groupSearchBase: cfg.ad.groupSearchBase ? String(cfg.ad.groupSearchBase) : '',
@@ -596,7 +603,7 @@ async function doStart(): Promise<express.Application> {
   });
   user.setLDAPClient(adClient);
   user.setServiceUrl(String(cfg.cas.service_base_url));
-  user.setUserPhotoCacheRoot(String(cfg.userphotos.root));
+  user.setUserPhotoCacheRoot(String(cfg.userphotos.root) + '/');  // root must end in slash!
   user.setUserPhotoCacheMaxAge(Number(cfg.userphotos.maxAge));
   user.init(app);
 
@@ -612,8 +619,6 @@ async function doStart(): Promise<express.Application> {
       prefix: '',
     });
   });
-
-  app.get('/', routes.main);
 
   // app.get('/apis', function (req, res) {
   //   res.redirect('https://' + req.host + ':' + api.get('port') + req.originalUrl);

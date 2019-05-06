@@ -148,7 +148,7 @@ function cloneTraveler(source, req, res) {
 
 export function init(app: express.Application) {
 
-  app.get('/travelers/', auth.ensureAuthenticated, function (req, res) {
+  app.get('/travelers', auth.ensureAuthenticated, function (req, res) {
     res.render('travelers');
   });
 
@@ -248,7 +248,7 @@ export function init(app: express.Application) {
     });
   });
 
-  app.get('/publictravelers/', auth.ensureAuthenticated, function (req, res) {
+  app.get('/publictravelers', auth.ensureAuthenticated, function (req, res) {
     res.render('public-travelers');
   });
 
@@ -307,7 +307,7 @@ export function init(app: express.Application) {
       }).pipe(res);
     });
 
-    app.get('/currenttravelers/', auth.ensureAuthenticated, function (req, res) {
+    app.get('/currenttravelers', auth.ensureAuthenticated, function (req, res) {
       return res.render('currenttravelers', {
         device: req.query.device || null
       });
@@ -337,7 +337,7 @@ export function init(app: express.Application) {
     });
   });
 
-  app.post('/travelers/', auth.ensureAuthenticated, reqUtils.filter('body', ['form', 'source']), function (req, res) {
+  app.post('/travelers', auth.ensureAuthenticated, reqUtils.filter('body', ['form', 'source']), function (req, res) {
     if (req.body.form) {
       Form.findById(req.body.form, function (err, form) {
         if (err) {
@@ -373,7 +373,7 @@ export function init(app: express.Application) {
     }
   });
 
-  app.get('/travelers/:id/', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), function (req, res) {
+  app.get('/travelers/:id', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), function (req, res) {
     var doc = req[req.params.id];
     if (doc.archived) {
       return res.redirect(serviceUrl + '/travelers/' + req.params.id + '/view');
@@ -446,7 +446,7 @@ export function init(app: express.Application) {
   });
 
   // use the form in the request as the active form
-  app.post('/travelers/:id/forms/', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['html', '_id', 'title']), reqUtils.hasAll('body', ['html', '_id', 'title']), reqUtils.sanitize('body', ['html', 'title']), function addForm(req, res) {
+  app.post('/travelers/:id/forms', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['html', '_id', 'title']), reqUtils.hasAll('body', ['html', '_id', 'title']), reqUtils.sanitize('body', ['html', 'title']), function addForm(req, res) {
     var doc = req[req.params.id];
     if (doc.status > 1 || doc.archived) {
       return res.status(400).send('cannot update form because of current traveler state');
@@ -609,7 +609,7 @@ export function init(app: express.Application) {
   });
 
 
-  app.post('/travelers/:id/devices/', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['newdevice']), reqUtils.sanitize('body', ['newdevice']), function (req, res) {
+  app.post('/travelers/:id/devices', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['newdevice']), reqUtils.sanitize('body', ['newdevice']), function (req, res) {
     var newdevice = req.body.newdevice;
     if (!newdevice) {
       return res.status(400).send('the new device name not accepted');
@@ -646,7 +646,7 @@ export function init(app: express.Application) {
     });
   });
 
-  app.get('/travelers/:id/data/', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canReadMw('id'), function (req, res) {
+  app.get('/travelers/:id/data', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canReadMw('id'), function (req, res) {
     var doc = req[req.params.id];
     TravelerData.find({
       _id: {
@@ -661,7 +661,7 @@ export function init(app: express.Application) {
     });
   });
 
-  app.post('/travelers/:id/data/', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.archived('id', false), reqUtils.canWriteMw('id'), reqUtils.status('id', [1]), reqUtils.filter('body', ['name', 'value', 'type']), reqUtils.hasAll('body', ['name', 'value', 'type']), reqUtils.sanitize('body', ['name', 'value', 'type']), function (req, res) {
+  app.post('/travelers/:id/data', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.archived('id', false), reqUtils.canWriteMw('id'), reqUtils.status('id', [1]), reqUtils.filter('body', ['name', 'value', 'type']), reqUtils.hasAll('body', ['name', 'value', 'type']), reqUtils.sanitize('body', ['name', 'value', 'type']), function (req, res) {
     var doc = req[req.params.id];
     var data = new TravelerData({
       traveler: doc._id,
@@ -693,7 +693,7 @@ export function init(app: express.Application) {
     });
   });
 
-  app.get('/travelers/:id/notes/', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canReadMw('id'), function (req, res) {
+  app.get('/travelers/:id/notes', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canReadMw('id'), function (req, res) {
     var doc = req[req.params.id];
     TravelerNote.find({
       _id: {
@@ -708,7 +708,7 @@ export function init(app: express.Application) {
     });
   });
 
-  app.post('/travelers/:id/notes/', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.archived('id', false), reqUtils.canWriteMw('id'), reqUtils.filter('body', ['name', 'value']), reqUtils.hasAll('body', ['name', 'value']), reqUtils.sanitize('body', ['name', 'value']), function (req, res) {
+  app.post('/travelers/:id/notes', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.archived('id', false), reqUtils.canWriteMw('id'), reqUtils.filter('body', ['name', 'value']), reqUtils.hasAll('body', ['name', 'value']), reqUtils.sanitize('body', ['name', 'value']), function (req, res) {
     var doc = req[req.params.id];
     var note = new TravelerNote({
       traveler: doc._id,
@@ -752,7 +752,7 @@ export function init(app: express.Application) {
     });
   });
 
-  app.post('/travelers/:id/uploads/', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canWriteMw('id'), reqUtils.status('id', [1]), function (req, res) {
+  app.post('/travelers/:id/uploads', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canWriteMw('id'), reqUtils.status('id', [1]), function (req, res) {
     var doc = req[req.params.id];
 
     if (underscore.isEmpty(req.files)) {
@@ -809,7 +809,7 @@ export function init(app: express.Application) {
     }
   });
 
-  app.get('/travelers/:id/share/', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), function (req, res) {
+  app.get('/travelers/:id/share', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), function (req, res) {
     var traveler = req[req.params.id];
     return res.render('share', {
       type: 'Traveler',
@@ -851,7 +851,7 @@ export function init(app: express.Application) {
     return res.status(400).send('unknown share list.');
   });
 
-  app.post('/travelers/:id/share/:list/', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), function (req, res) {
+  app.post('/travelers/:id/share/:list', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), function (req, res) {
     var traveler = req[req.params.id];
     var share = -2;
     if (req.params.list === 'users') {

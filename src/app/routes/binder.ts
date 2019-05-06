@@ -33,7 +33,7 @@ export function setServiceUrl(url: string) {
 
 export function init(app: express.Application) {
 
-  app.get('/binders/', auth.ensureAuthenticated, function (req, res) {
+  app.get('/binders', auth.ensureAuthenticated, function (req, res) {
     res.render('binders');
   });
 
@@ -61,7 +61,7 @@ export function init(app: express.Application) {
     });
   });
 
-  app.post('/binders/:id/tags/', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canWriteMw('id'), reqUtils.filter('body', ['newtag']), reqUtils.sanitize('body', ['newtag']), function (req, res) {
+  app.post('/binders/:id/tags', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canWriteMw('id'), reqUtils.filter('body', ['newtag']), reqUtils.sanitize('body', ['newtag']), function (req, res) {
     var doc = req[req.params.id];
     doc.updatedBy = req.session.userid;
     doc.updatedOn = Date.now();
@@ -109,7 +109,7 @@ export function init(app: express.Application) {
   });
 
 
-  app.get('/binders/:id/share/', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.isOwnerMw('id'), function (req, res) {
+  app.get('/binders/:id/share', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.isOwnerMw('id'), function (req, res) {
     var binder = req[req.params.id];
     return res.render('share', {
       type: 'Binder',
@@ -150,7 +150,7 @@ export function init(app: express.Application) {
     return res.status(400).send('unknown share list.');
   });
 
-  app.post('/binders/:id/share/:list/', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.isOwnerMw('id'), function (req, res) {
+  app.post('/binders/:id/share/:list', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.isOwnerMw('id'), function (req, res) {
     var binder = req[req.params.id];
     var share = -2;
     if (req.params.list === 'users') {
@@ -241,7 +241,7 @@ export function init(app: express.Application) {
     res.render('binder-new');
   });
 
-  app.post('/binders/', auth.ensureAuthenticated, reqUtils.filter('body', ['title', 'description']), reqUtils.hasAll('body', ['title']), reqUtils.sanitize('body', ['title', 'description']), function (req, res) {
+  app.post('/binders', auth.ensureAuthenticated, reqUtils.filter('body', ['title', 'description']), reqUtils.hasAll('body', ['title']), reqUtils.sanitize('body', ['title', 'description']), function (req, res) {
     var binder: {
       works?: unknown[];
       title?: unknown;
@@ -414,7 +414,7 @@ export function init(app: express.Application) {
     shareLib.changeOwner(req, res, doc);
   });
 
-  app.get('/binders/:id/', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canReadMw('id'), function (req, res) {
+  app.get('/binders/:id', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canReadMw('id'), function (req, res) {
     res.render('binder', {
       binder: req[req.params.id]
     });
@@ -648,7 +648,7 @@ export function init(app: express.Application) {
     });
   }
 
-  app.post('/binders/:id/', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canWriteMw('id'), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['travelers', 'binders']), function (req, res) {
+  app.post('/binders/:id', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canWriteMw('id'), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['travelers', 'binders']), function (req, res) {
     addWork(req[req.params.id], req, res);
   });
 
@@ -675,7 +675,7 @@ export function init(app: express.Application) {
 
   });
 
-  app.put('/binders/:id/works/', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canWriteMw('id'), reqUtils.status('id', [0, 1]), function (req, res) {
+  app.put('/binders/:id/works', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canWriteMw('id'), reqUtils.status('id', [0, 1]), function (req, res) {
     var binder = req[req.params.id];
     var works = binder.works;
     var updates = req.body;
@@ -728,7 +728,7 @@ export function init(app: express.Application) {
 
   });
 
-  app.get('/publicbinders/', auth.ensureAuthenticated, function (req, res) {
+  app.get('/publicbinders', auth.ensureAuthenticated, function (req, res) {
     res.render('public-binders');
   });
 

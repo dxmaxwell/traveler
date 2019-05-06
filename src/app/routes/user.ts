@@ -226,7 +226,7 @@ export function init(app: express.Application) {
   });
 
 
-  app.post('/users/', auth.ensureAuthenticated, function (req, res) {
+  app.post('/users', auth.ensureAuthenticated, function (req, res) {
 
     if (req.session.roles === undefined || req.session.roles.indexOf('admin') === -1) {
       return res.status(403).send('only admin allowed');
@@ -347,7 +347,7 @@ export function init(app: express.Application) {
 
   // resource /adusers
 
-  app.get('/adusers/', auth.ensureAuthenticated, function (req, res) {
+  app.get('/adusers', auth.ensureAuthenticated, function (req, res) {
     return res.status(200).send('Please provide the user id');
   });
 

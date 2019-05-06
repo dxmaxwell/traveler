@@ -33,7 +33,7 @@ export function setServiceUrl(url: string) {
 
 export function init(app: express.Application) {
 
-  app.get('/forms/', auth.ensureAuthenticated, function (req, res) {
+  app.get('/forms', auth.ensureAuthenticated, function (req, res) {
     res.render('forms');
   });
 
@@ -149,7 +149,7 @@ export function init(app: express.Application) {
     });
   });
 
-  app.get('/publicforms/', auth.ensureAuthenticated, function (req, res) {
+  app.get('/publicforms', auth.ensureAuthenticated, function (req, res) {
     res.render('public-forms');
   });
 
@@ -177,7 +177,7 @@ export function init(app: express.Application) {
     });
   });
 
-  app.get('/forms/:id/', auth.ensureAuthenticated, reqUtils.exist('id', Form), function (req, res) {
+  app.get('/forms/:id', auth.ensureAuthenticated, reqUtils.exist('id', Form), function (req, res) {
     var form = req[req.params.id];
     var access = reqUtils.getAccess(req, form);
 
@@ -207,7 +207,7 @@ export function init(app: express.Application) {
     return res.status(200).json(req[req.params.id]);
   });
 
-  app.post('/forms/:id/uploads/', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canReadMw('id'), function (req, res) {
+  app.post('/forms/:id/uploads', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canReadMw('id'), function (req, res) {
     var doc = req[req.params.id];
     if (underscore.isEmpty(req.files)) {
       return res.status(400).send('Expecte One uploaded file');
@@ -260,7 +260,7 @@ export function init(app: express.Application) {
     });
   });
 
-  app.get('/forms/:id/share/', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), function (req, res) {
+  app.get('/forms/:id/share', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), function (req, res) {
     var form = req[req.params.id];
     return res.render('share', {
       type: 'form',
@@ -302,7 +302,7 @@ export function init(app: express.Application) {
     return res.status(400).send('unknown share list.');
   });
 
-  app.post('/forms/:id/share/:list/', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), function (req, res) {
+  app.post('/forms/:id/share/:list', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), function (req, res) {
     var form = req[req.params.id];
     var share = -2;
     if (req.params.list === 'users') {
@@ -388,7 +388,7 @@ export function init(app: express.Application) {
     shareLib.removeShare(req, res, form);
   });
 
-  app.post('/forms/', auth.ensureAuthenticated, reqUtils.sanitize('body', ['html']), function (req, res) {
+  app.post('/forms', auth.ensureAuthenticated, reqUtils.sanitize('body', ['html']), function (req, res) {
     var form: {
       html?: unknown;
       clonedFrom?: unknown,
@@ -470,7 +470,7 @@ export function init(app: express.Application) {
     shareLib.changeOwner(req, res, doc);
   });
 
-  app.put('/forms/:id/', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canWriteMw('id'), reqUtils.status('id', [0]), reqUtils.filter('body', ['html', 'title']), reqUtils.sanitize('body', ['html', 'title']), function (req, res) {
+  app.put('/forms/:id', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canWriteMw('id'), reqUtils.status('id', [0]), reqUtils.filter('body', ['html', 'title']), reqUtils.sanitize('body', ['html', 'title']), function (req, res) {
     if (!req.is('json')) {
       return res.status(415).send('json request expected');
     }

@@ -5,7 +5,7 @@ var TravelerData = mongoose.model('TravelerData');
 var TravelerNote = mongoose.model('TravelerNote');
 
 module.exports = function (app) {
-  app.get('/apis/travelers/', function (req, res) {
+  app.get('/apis/travelers', function (req, res) {
     var search: { archived: { $ne: boolean }, devices?: { $in: unknown[] }  } = {
       archived: {
         $ne: true
@@ -25,7 +25,7 @@ module.exports = function (app) {
     });
   });
 
-  app.get('/apis/travelers/:id/', function (req, res) {
+  app.get('/apis/travelers/:id', function (req, res) {
     Traveler.findById(req.params.id, function (err, doc) {
       if (err) {
         console.error(err);
@@ -38,7 +38,7 @@ module.exports = function (app) {
     });
   });
 
-  app.get('/apis/travelers/:id/data/', function (req, res) {
+  app.get('/apis/travelers/:id/data', function (req, res) {
     Traveler.findById(req.params.id, function (err, doc) {
       if (err) {
         console.error(err);
@@ -61,7 +61,7 @@ module.exports = function (app) {
     });
   });
 
-  app.get('/apis/travelers/:id/notes/', function (req, res) {
+  app.get('/apis/travelers/:id/notes', function (req, res) {
     Traveler.findById(req.params.id, function (err, doc) {
       if (err) {
         console.error(err);
@@ -84,7 +84,7 @@ module.exports = function (app) {
     });
   });
 
-  app.get('/apis/data/:id/', function (req, res) {
+  app.get('/apis/data/:id', function (req, res) {
     TravelerData.findById(req.params.id).exec(function (err, data) {
       if (err) {
         console.error(err);

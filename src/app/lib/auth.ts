@@ -110,7 +110,8 @@ export function ensureAuthenticated(req, res, next) {
       // remove the ticket query param
       delete ticketUrl.query.ticket;
       return res.redirect(301, url.format({
-        pathname: req.proxied ? url.resolve(auth.proxied_service + '/', '.' + ticketUrl.pathname) : ticketUrl.pathname,
+        // pathname: req.proxied ? url.resolve(auth.proxied_service + '/', '.' + ticketUrl.pathname) : ticketUrl.pathname,
+        pathname: ticketUrl.pathname,
         query: ticketUrl.query
       }));
     }
@@ -199,33 +200,37 @@ export function ensureAuthenticated(req, res, next) {
               });
             }
             if (req.session.landing && req.session.landing !== '/login') {
-              res.redirect(req.proxied ? url.resolve(auth.proxied_service + '/', '.' + req.session.landing) : req.session.landing);
+              // res.redirect(req.proxied ? url.resolve(auth.proxied_service + '/', '.' + req.session.landing) : req.session.landing);
+              res.redirect(req.session.landing);
             } else {
               // has a ticket but not landed before, must copy the ticket from somewhere ...
-              res.redirect(req.proxied ? auth.proxied_service + '/' : '/');
+              // res.redirect(req.proxied ? auth.proxied_service + '/' : '/');
+              res.redirect('/');
             }
             // halt.resume();
           });
         });
       } else {
         console.error('CAS reject this ticket');
-        return res.redirect(req.proxied ? auth.login_proxied_service : auth.login_service);
+        // return res.redirect(req.proxied ? auth.login_proxied_service : auth.login_service);
+        return res.redirect(authConfig.service);
       }
     });
   } else {
     // if this is ajax call, then send 401 without redirect
     if (req.xhr) {
       // TODO: might need to properly set the WWW-Authenticate header
-      res.set('WWW-Authenticate', 'CAS realm="' + (req.proxied ? auth.proxied_service : auth.service) + '"');
+      // res.set('WWW-Authenticate', 'CAS realm="' + (req.proxied ? auth.proxied_service : auth.service) + '"');
+      res.set('WWW-Authenticate', 'CAS realm="' + authConfig.service + '"');
       return res.send(401, 'xhr cannot be authenticated');
     } else {
       // set the landing, the first unauthenticated url
       req.session.landing = req.url;
-      if (req.proxied) {
-        res.redirect(auth.proxied_cas + '/login?service=' + encodeURIComponent(auth.login_proxied_service));
-      } else {
-        res.redirect(auth.cas + '/login?service=' + encodeURIComponent(auth.login_service));
-      }
+      // if (req.proxied) {
+      //   res.redirect(auth.proxied_cas + '/login?service=' + encodeURIComponent(auth.login_proxied_service));
+      // } else {
+      res.redirect(authConfig.cas + '/login?service=' + encodeURIComponent(authConfig.service));
+      // }
     }
   }
 }

@@ -5,7 +5,7 @@
 import * as express from 'express';
 
 export function init(app: express.Application) {
-  app.get('/docs/', function (req, res) {
+  app.get('/docs', function (req, res) {
     res.render('doc-in-one', {
       // prefix: req.proxied ? req.proxied_prefix : ''
       prefix: ''
