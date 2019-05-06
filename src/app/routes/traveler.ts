@@ -11,6 +11,11 @@ import * as auth from '../lib/auth';
 import * as cheer from 'cheerio';
 import * as underscore from 'underscore';
 
+import {
+  error,
+  info,
+} from '../shared/logging';
+
 import * as reqUtils from '../lib/req-utils';
 import * as shareLib from '../lib/share';
 
@@ -29,6 +34,8 @@ import {
   TravelerNote,
 } from '../model/traveler';
 
+type Request = express.Request;
+type Response = express.Response;
 
 let serviceUrl = '';
 
@@ -40,11 +47,11 @@ export function setServiceUrl(url: string) {
   serviceUrl = url;
 }
 
-function createTraveler(form, req, res) {
+function createTraveler(form: Form, req: Request, res: Response) {
   // update the total input number and finished input number
-  var $ = cheer.load(form.html);
-  var num = $('input, textarea').length;
-  var traveler = new Traveler({
+  const $ = cheer.load(form.html);
+  const num = $('input, textarea').length;
+  const traveler = new Traveler({
     title: form.title,
     description: '',
     devices: [],
@@ -57,32 +64,33 @@ function createTraveler(form, req, res) {
     data: [],
     comments: [],
     totalInput: num,
-    finishedInput: 0
+    finishedInput: 0,
   });
   traveler.forms.push({
     _id: undefined,
     html: form.html,
     activatedOn: [new Date()],
     reference: form._id,
-    alias: form.title
+    alias: form.title,
   });
   traveler.activeForm = traveler.forms[0]._id;
-  traveler.save(function (err, doc) {
+  traveler.save((err, doc) => {
     if (err) {
-      console.error(err);
+      error(err);
       return res.status(500).send(err.message);
     }
-    console.log('new traveler ' + doc.id + ' created');
-    var url = serviceUrl + '/travelers/' + doc.id + '/';
+    info('new traveler ' + doc.id + ' created');
+    const url = serviceUrl + '/travelers/' + doc.id + '/';
     res.set('Location', url);
     return res.status(201).json({
-      location: (req.proxied ? req.proxied_prefix : '') + '/travelers/' + doc.id + '/'
+      // location: (req.proxied ? req.proxied_prefix : '') + '/travelers/' + doc.id + '/'
+      location: res.locals.basePath + '/travelers/' + doc.id,
     });
   });
 }
 
-function cloneTraveler(source, req, res) {
-  var traveler = new Traveler({
+function cloneTraveler(source: Traveler, req: Request, res: Response) {
+  const traveler = new Traveler({
     title: source.title + ' clone',
     description: source.description,
     devices: [],
@@ -99,98 +107,99 @@ function cloneTraveler(source, req, res) {
     data: [],
     comments: [],
     totalInput: source.totalInput,
-    finishedInput: 0
+    finishedInput: 0,
   });
 
-  traveler.save(function (err, doc) {
+  traveler.save((err, doc) => {
     if (err) {
-      console.error(err);
+      error(err);
       return res.status(500).send(err.message);
     }
-    console.log('new traveler ' + doc.id + ' created');
-    doc.sharedWith.forEach(function (e) {
+    info('new traveler ' + doc.id + ' created');
+    doc.sharedWith.forEach((e) => {
       User.findByIdAndUpdate(e._id, {
         $addToSet: {
-          travelers: doc._id
-        }
-      }, function (userErr, user) {
+          travelers: doc._id,
+        },
+      }, (userErr, user) => {
         if (userErr) {
-          console.error(userErr);
+          error(userErr);
         }
         if (!user) {
-          console.error('The user ' + e._id + ' does not in the db');
+          error('The user ' + e._id + ' does not in the db');
         }
       });
     });
 
-    doc.sharedGroup.forEach(function (e) {
+    doc.sharedGroup.forEach((e) => {
       Group.findByIdAndUpdate(e._id, {
         $addToSet: {
-          travelers: doc._id
-        }
-      }, function (groupErr, user) {
+          travelers: doc._id,
+        },
+      }, (groupErr, user) => {
         if (groupErr) {
-          console.error(groupErr);
+          error(groupErr);
         }
         if (!user) {
-          console.error('The group ' + e._id + ' does not in the db');
+          error('The group ' + e._id + ' does not in the db');
         }
       });
     });
 
-    var url = serviceUrl + '/travelers/' + doc.id + '/';
+    const url = serviceUrl + '/travelers/' + doc.id + '/';
     res.set('Location', url);
     return res.status(201).json({
-      location: url
+      location: url,
     });
   });
 }
 
 export function init(app: express.Application) {
 
-  app.get('/travelers', auth.ensureAuthenticated, function (req, res) {
+  app.get('/travelers', auth.ensureAuthenticated, (req, res) => {
     res.render('travelers');
   });
 
-  app.get('/travelers/json', auth.ensureAuthenticated, function (req, res) {
+  app.get('/travelers/json', auth.ensureAuthenticated, (req, res) => {
     Traveler.find({
       createdBy: req.session.userid,
       archived: {
-        $ne: true
+        $ne: true,
       },
       owner: {
-        $exists: false
-      }
-    }, 'title description status devices sharedWith sharedGroup publicAccess locations createdOn deadline updatedOn updatedBy manPower finishedInput totalInput').lean().exec(function (err, docs) {
+        $exists: false,
+      },
+    // tslint:disable:max-line-length
+    }, 'title description status devices sharedWith sharedGroup publicAccess locations createdOn deadline updatedOn updatedBy manPower finishedInput totalInput').lean().exec((err, docs) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       return res.status(200).json(docs);
     });
   });
 
-  app.get('/transferredtravelers/json', auth.ensureAuthenticated, function (req, res) {
+  app.get('/transferredtravelers/json', auth.ensureAuthenticated, (req, res) => {
     Traveler.find({
       owner: req.session.userid,
       archived: {
-        $ne: true
-      }
-    }, 'title description status devices sharedWith sharedGroup publicAccess locations createdOn transferredOn deadline updatedOn updatedBy manPower finishedInput totalInput').lean().exec(function (err, travelers) {
+        $ne: true,
+      },
+    }, 'title description status devices sharedWith sharedGroup publicAccess locations createdOn transferredOn deadline updatedOn updatedBy manPower finishedInput totalInput').lean().exec((err, travelers) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       res.status(200).json(travelers);
     });
   });
 
-  app.get('/sharedtravelers/json', auth.ensureAuthenticated, function (req, res) {
+  app.get('/sharedtravelers/json', auth.ensureAuthenticated, (req, res) => {
     User.findOne({
-      _id: req.session.userid
-    }, 'travelers').exec(function (err, me) {
+      _id: req.session.userid,
+    }, 'travelers').exec((err, me) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       if (!me) {
@@ -198,14 +207,14 @@ export function init(app: express.Application) {
       }
       Traveler.find({
         _id: {
-          $in: me.travelers
+          $in: me.travelers,
         },
         archived: {
-          $ne: true
-        }
-      }, 'title description status devices locations createdBy createdOn owner deadline updatedBy updatedOn sharedWith sharedGroup publicAccess manPower finishedInput totalInput').lean().exec(function (tErr, travelers) {
+          $ne: true,
+        },
+      }, 'title description status devices locations createdBy createdOn owner deadline updatedBy updatedOn sharedWith sharedGroup publicAccess manPower finishedInput totalInput').lean().exec((tErr, travelers) => {
         if (tErr) {
-          console.error(tErr);
+          error(tErr);
           return res.status(500).send(tErr.message);
         }
         return res.status(200).json(travelers);
@@ -213,19 +222,19 @@ export function init(app: express.Application) {
     });
   });
 
-  app.get('/groupsharedtravelers/json', auth.ensureAuthenticated, function (req, res) {
+  app.get('/groupsharedtravelers/json', auth.ensureAuthenticated, (req, res) => {
     Group.find({
       _id: {
-        $in: req.session.memberOf
-      }
-    }, 'travelers').exec(function (err, groups) {
+        $in: req.session.memberOf,
+      },
+    }, 'travelers').exec((err, groups) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
-      var travelerIds = [];
-      var i;
-      var j;
+      const travelerIds = [];
+      let i;
+      let j;
       // merge the travelers arrays
       for (i = 0; i < groups.length; i += 1) {
         for (j = 0; j < groups[i].travelers.length; j += 1) {
@@ -236,11 +245,11 @@ export function init(app: express.Application) {
       }
       Traveler.find({
         _id: {
-          $in: travelerIds
-        }
-      }, 'title description status devices locations createdBy createdOn owner deadline updatedBy updatedOn sharedWith sharedGroup publicAccess manPower finishedInput totalInput').lean().exec(function (tErr, travelers) {
+          $in: travelerIds,
+        },
+      }, 'title description status devices locations createdBy createdOn owner deadline updatedBy updatedOn sharedWith sharedGroup publicAccess manPower finishedInput totalInput').lean().exec((tErr, travelers) => {
         if (tErr) {
-          console.error(tErr);
+          error(tErr);
           return res.status(500).send(tErr.message);
         }
         res.status(200).json(travelers);
@@ -248,11 +257,11 @@ export function init(app: express.Application) {
     });
   });
 
-  app.get('/publictravelers', auth.ensureAuthenticated, function (req, res) {
+  app.get('/publictravelers', auth.ensureAuthenticated, (req, res) => {
     res.render('public-travelers');
   });
 
-  app.get('/publictravelers/json', auth.ensureAuthenticated, function (req, res) {
+  app.get('/publictravelers/json', auth.ensureAuthenticated, (req, res) => {
     Traveler.find({
       $or: [{
         publicAccess: {
@@ -264,11 +273,11 @@ export function init(app: express.Application) {
         },
       }],
       archived: {
-        $ne: true
-      }
-    }, 'title description status devices locations createdBy createdOn owner deadline updatedBy updatedOn sharedWith sharedGroup').lean().exec(function (err, travelers) {
+        $ne: true,
+      },
+    }, 'title description status devices locations createdBy createdOn owner deadline updatedBy updatedOn sharedWith sharedGroup').lean().exec((err, travelers) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       res.status(200).json(travelers);
@@ -313,35 +322,35 @@ export function init(app: express.Application) {
       });
     });*/
 
-  app.get('/archivedtravelers/json', auth.ensureAuthenticated, function (req, res) {
-    var search = {
+  app.get('/archivedtravelers/json', auth.ensureAuthenticated, (req, res) => {
+    const search = {
       $and: [{
         $or: [{
           createdBy: req.session.userid,
           owner: {
-            $exists: false
-          }
+            $exists: false,
+          },
         }, {
-          owner: req.session.userid
-        }]
+          owner: req.session.userid,
+        }],
       }, {
-        archived: true
-      }]
+        archived: true,
+      }],
     };
-    Traveler.find(search, 'title description status devices locations archivedOn updatedBy updatedOn deadline sharedWith sharedGroup manPower finishedInput totalInput').lean().exec(function (err, travelers) {
+    Traveler.find(search, 'title description status devices locations archivedOn updatedBy updatedOn deadline sharedWith sharedGroup manPower finishedInput totalInput').lean().exec((err, travelers) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       return res.status(200).json(travelers);
     });
   });
 
-  app.post('/travelers', auth.ensureAuthenticated, reqUtils.filter('body', ['form', 'source']), function (req, res) {
+  app.post('/travelers', auth.ensureAuthenticated, reqUtils.filter('body', ['form', 'source']), (req, res) => {
     if (req.body.form) {
-      Form.findById(req.body.form, function (err, form) {
+      Form.findById(req.body.form, (err, form) => {
         if (err) {
-          console.error(err);
+          error(err);
           return res.status(500).send(err.message);
         }
         if (form) {
@@ -352,9 +361,9 @@ export function init(app: express.Application) {
       });
     }
     if (req.body.source) {
-      Traveler.findById(req.body.source, function (err, traveler) {
+      Traveler.findById(req.body.source, (err, traveler) => {
         if (err) {
-          console.error(err);
+          error(err);
           return res.status(500).send(err.message);
         }
         if (traveler) {
@@ -373,8 +382,8 @@ export function init(app: express.Application) {
     }
   });
 
-  app.get('/travelers/:id', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), function (req, res) {
-    var doc = req[req.params.id];
+  app.get('/travelers/:id', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), (req, res) => {
+    const doc = req[req.params.id];
     if (doc.archived) {
       return res.redirect(serviceUrl + '/travelers/' + req.params.id + '/view');
     }
@@ -383,7 +392,7 @@ export function init(app: express.Application) {
       return res.render('traveler', {
         isOwner: reqUtils.isOwner(req, doc),
         traveler: doc,
-        formHTML: doc.forms.length === 1 ? doc.forms[0].html : doc.forms.id(doc.activeForm).html
+        formHTML: doc.forms.length === 1 ? doc.forms[0].html : doc.forms.id(doc.activeForm).html,
       });
     }
 
@@ -394,18 +403,18 @@ export function init(app: express.Application) {
     return res.status(403).send('You are not authorized to access this resource');
   });
 
-  app.get('/travelers/:id/view', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), function (req, res) {
+  app.get('/travelers/:id/view', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), (req, res) => {
     return res.render('traveler-viewer', {
-      traveler: req[req.params.id]
+      traveler: req[req.params.id],
     });
   });
 
-  app.get('/travelers/:id/json', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canReadMw('id'), function (req, res) {
+  app.get('/travelers/:id/json', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canReadMw('id'), (req, res) => {
     return res.status(200).json(req[req.params.id]);
   });
 
-  app.put('/travelers/:id/archived', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['archived']), function (req, res) {
-    var doc = req[req.params.id];
+  app.put('/travelers/:id/archived', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['archived']), (req, res) => {
+    const doc = req[req.params.id];
     if (doc.archived === req.body.archived) {
       return res.send(204);
     }
@@ -416,9 +425,9 @@ export function init(app: express.Application) {
       doc.archivedOn = Date.now();
     }
 
-    doc.save(function (saveErr, newDoc) {
+    doc.save((saveErr, newDoc) => {
       if (saveErr) {
-        console.error(saveErr);
+        error(saveErr);
         return res.status(500).send(saveErr.message);
       }
       return res.status(200).send('traveler ' + req.params.id + ' archived state set to ' + newDoc.archived);
@@ -426,46 +435,46 @@ export function init(app: express.Application) {
 
   });
 
-  app.put('/travelers/:id/owner', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.status('id', [0, 1, 1.5]), reqUtils.filter('body', ['name']), function (req, res) {
-    var doc = req[req.params.id];
+  app.put('/travelers/:id/owner', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.status('id', [0, 1, 1.5]), reqUtils.filter('body', ['name']), (req, res) => {
+    const doc = req[req.params.id];
     shareLib.changeOwner(req, res, doc);
   });
 
-  app.get('/travelers/:id/config', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), function (req, res) {
-    var doc = req[req.params.id];
+  app.get('/travelers/:id/config', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), (req, res) => {
+    const doc = req[req.params.id];
     return res.render('traveler-config', {
       traveler: doc,
-      isOwner: reqUtils.isOwner(req, doc)
+      isOwner: reqUtils.isOwner(req, doc),
     });
   });
 
-  app.get('/travelers/:id/formmanager', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), function formviewer(req, res) {
+  app.get('/travelers/:id/formmanager', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), (req, res) => {
     res.render('form-manager', {
-      traveler: req[req.params.id]
+      traveler: req[req.params.id],
     });
   });
 
   // use the form in the request as the active form
-  app.post('/travelers/:id/forms', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['html', '_id', 'title']), reqUtils.hasAll('body', ['html', '_id', 'title']), reqUtils.sanitize('body', ['html', 'title']), function addForm(req, res) {
-    var doc = req[req.params.id];
+  app.post('/travelers/:id/forms', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['html', '_id', 'title']), reqUtils.hasAll('body', ['html', '_id', 'title']), reqUtils.sanitize('body', ['html', 'title']), (req, res) => {
+    const doc = req[req.params.id];
     if (doc.status > 1 || doc.archived) {
       return res.status(400).send('cannot update form because of current traveler state');
     }
-    var form = {
+    const form = {
       html: req.body.html,
       activatedOn: [Date.now()],
       reference: req.body._id,
-      alias: req.body.title
+      alias: req.body.title,
     };
 
-    var $ = cheer.load(form.html);
-    var num = $('input, textarea').length;
+    const $ = cheer.load(form.html);
+    const num = $('input, textarea').length;
     doc.forms.push(form);
     doc.activeForm = doc.forms[doc.forms.length - 1]._id;
     doc.totalInput = num;
     doc.save(function saveDoc(e, newDoc) {
       if (e) {
-        console.error(e);
+        error(e);
         return res.status(500).send(e.message);
       }
       return res.status(200).json(newDoc);
@@ -473,30 +482,30 @@ export function init(app: express.Application) {
   });
 
   // set active form
-  app.put('/travelers/:id/forms/active', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), function putActiveForm(req, res) {
-    var doc = req[req.params.id];
+  app.put('/travelers/:id/forms/active', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), (req, res) => {
+    const doc = req[req.params.id];
     if (doc.status > 1 || doc.archived) {
       return res.status(400).send('cannot update form because of current traveler state');
     }
-    var formid = req.body.formid;
+    const formid = req.body.formid;
     if (!formid) {
       return res.status(400).send('form id unknown');
     }
 
-    var form = doc.forms.id(formid);
+    const form = doc.forms.id(formid);
 
     if (!form) {
       return res.status(410).send('form ' + req.body.formid + ' gone');
     }
 
     doc.activeForm = form._id;
-    var $ = cheer.load(form.html);
-    var num = $('input, textarea').length;
+    const $ = cheer.load(form.html);
+    const num = $('input, textarea').length;
     form.activatedOn.push(Date.now());
     doc.totalInput = num;
     doc.save(function saveDoc(e, newDoc) {
       if (e) {
-        console.error(e);
+        error(e);
         return res.status(500).send(e.message);
       }
       return res.status(200).json(newDoc);
@@ -505,29 +514,29 @@ export function init(app: express.Application) {
 
   // set form alias
   app.put('/travelers/:id/forms/:fid/alias', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['value']), reqUtils.sanitize('body', ['value']), function putFormAlias(req, res) {
-    var doc = req[req.params.id];
+    const doc = req[req.params.id];
     if (doc.status > 1 || doc.archived) {
       return res.status(400).send('cannot update form because of current traveler state');
     }
-    var form = doc.forms.id(req.params.fid);
+    const form = doc.forms.id(req.params.fid);
     if (!form) {
       return res.status(410).send('from ' + req.params.fid + ' not found.');
     }
 
     form.alias = req.body.value;
 
-    doc.save(function saveDoc(e) {
+    doc.save((e) => {
       if (e) {
-        console.error(e);
+        error(e);
         return res.status(500).send(e.message);
       }
       return res.send(204);
     });
   });
 
-  app.put('/travelers/:id/config', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['title', 'description', 'deadline']), reqUtils.sanitize('body', ['title', 'description', 'deadline']), function (req, res) {
-    var doc = req[req.params.id];
-    var k;
+  app.put('/travelers/:id/config', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['title', 'description', 'deadline']), reqUtils.sanitize('body', ['title', 'description', 'deadline']), (req, res) => {
+    const doc = req[req.params.id];
+    let k;
     for (k in req.body) {
       if (req.body.hasOwnProperty(k) && req.body[k] !== null) {
         doc[k] = req.body[k];
@@ -535,12 +544,12 @@ export function init(app: express.Application) {
     }
     doc.updatedBy = req.session.userid;
     doc.updatedOn = Date.now();
-    doc.save(function (saveErr, newDoc) {
+    doc.save((saveErr, newDoc) => {
       if (saveErr) {
-        console.error(saveErr);
+        error(saveErr);
         return res.status(500).send(saveErr.message);
       }
-      var out = {};
+      const out = {};
       for (k in req.body) {
         if (req.body.hasOwnProperty(k) && req.body[k] !== null) {
           out[k] = newDoc.get(k);
@@ -550,8 +559,8 @@ export function init(app: express.Application) {
     });
   });
 
-  app.put('/travelers/:id/status', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canWriteMw('id'), reqUtils.archived('id', false), function (req, res) {
-    var doc = req[req.params.id];
+  app.put('/travelers/:id/status', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canWriteMw('id'), reqUtils.archived('id', false), (req, res) => {
+    const doc = req[req.params.id];
 
     if ([1, 1.5, 2, 3].indexOf(req.body.status) === -1) {
       return res.status(400).send('invalid status');
@@ -599,9 +608,9 @@ export function init(app: express.Application) {
 
     doc.updatedBy = req.session.userid;
     doc.updatedOn = Date.now();
-    doc.save(function (saveErr) {
+    doc.save((saveErr) => {
       if (saveErr) {
-        console.error(saveErr);
+        error(saveErr);
         return res.status(500).send(saveErr.message);
       }
       return res.status(200).send('status updated to ' + req.body.status);
@@ -609,83 +618,83 @@ export function init(app: express.Application) {
   });
 
 
-  app.post('/travelers/:id/devices', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['newdevice']), reqUtils.sanitize('body', ['newdevice']), function (req, res) {
-    var newdevice = req.body.newdevice;
+  app.post('/travelers/:id/devices', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['newdevice']), reqUtils.sanitize('body', ['newdevice']), (req, res) => {
+    const newdevice = req.body.newdevice;
     if (!newdevice) {
       return res.status(400).send('the new device name not accepted');
     }
-    var doc = req[req.params.id];
+    const doc = req[req.params.id];
     doc.updatedBy = req.session.userid;
     doc.updatedOn = Date.now();
-    var added = doc.devices.addToSet(newdevice);
+    const added = doc.devices.addToSet(newdevice);
     if (added.length === 0) {
       return res.send(204);
     }
-    doc.save(function (saveErr) {
+    doc.save((saveErr) => {
       if (saveErr) {
-        console.error(saveErr);
+        error(saveErr);
         return res.status(500).send(saveErr.message);
       }
       return res.status(200).json({
-        device: newdevice
+        device: newdevice,
       });
     });
   });
 
-  app.delete('/travelers/:id/devices/:number', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), function (req, res) {
-    var doc = req[req.params.id];
+  app.delete('/travelers/:id/devices/:number', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), (req, res) => {
+    const doc = req[req.params.id];
     doc.updatedBy = req.session.userid;
     doc.updatedOn = Date.now();
     doc.devices.pull(req.params.number);
-    doc.save(function (saveErr) {
+    doc.save((saveErr) => {
       if (saveErr) {
-        console.error(saveErr);
+        error(saveErr);
         return res.status(500).send(saveErr.message);
       }
       return res.send(204);
     });
   });
 
-  app.get('/travelers/:id/data', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canReadMw('id'), function (req, res) {
-    var doc = req[req.params.id];
+  app.get('/travelers/:id/data', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canReadMw('id'), (req, res) => {
+    const doc = req[req.params.id];
     TravelerData.find({
       _id: {
-        $in: doc.data
-      }
-    }, 'name value inputType inputBy inputOn').exec(function (dataErr, docs) {
+        $in: doc.data,
+      },
+    }, 'name value inputType inputBy inputOn').exec((dataErr, docs) => {
       if (dataErr) {
-        console.error(dataErr);
+        error(dataErr);
         return res.status(500).send(dataErr.message);
       }
       return res.status(200).json(docs);
     });
   });
 
-  app.post('/travelers/:id/data', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.archived('id', false), reqUtils.canWriteMw('id'), reqUtils.status('id', [1]), reqUtils.filter('body', ['name', 'value', 'type']), reqUtils.hasAll('body', ['name', 'value', 'type']), reqUtils.sanitize('body', ['name', 'value', 'type']), function (req, res) {
-    var doc = req[req.params.id];
-    var data = new TravelerData({
+  app.post('/travelers/:id/data', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.archived('id', false), reqUtils.canWriteMw('id'), reqUtils.status('id', [1]), reqUtils.filter('body', ['name', 'value', 'type']), reqUtils.hasAll('body', ['name', 'value', 'type']), reqUtils.sanitize('body', ['name', 'value', 'type']), (req, res) => {
+    const doc = req[req.params.id];
+    const data = new TravelerData({
       traveler: doc._id,
       name: req.body.name,
       value: req.body.value,
       inputType: req.body.type,
       inputBy: req.session.userid,
-      inputOn: Date.now()
+      inputOn: Date.now(),
     });
-    data.save(function (dataErr) {
+    data.save((dataErr) => {
       if (dataErr) {
-        console.error(dataErr);
+        error(dataErr);
         return res.status(500).send(dataErr.message);
       }
       doc.data.push(data._id);
       doc.manPower.addToSet({
         _id: req.session.userid,
-        username: req.session.username
+        username: req.session.username,
       });
       doc.updatedBy = req.session.userid;
       doc.updatedOn = Date.now();
-      doc.save(function (saveErr) {
+      doc.save((saveErr) => {
         if (saveErr) {
-          console.error(saveErr);
+          error(saveErr);
           return res.status(500).send(saveErr.message);
         }
         return res.send(204);
@@ -693,45 +702,45 @@ export function init(app: express.Application) {
     });
   });
 
-  app.get('/travelers/:id/notes', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canReadMw('id'), function (req, res) {
-    var doc = req[req.params.id];
+  app.get('/travelers/:id/notes', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canReadMw('id'), (req, res) => {
+    const doc = req[req.params.id];
     TravelerNote.find({
       _id: {
-        $in: doc.notes
-      }
-    }, 'name value inputBy inputOn').exec(function (noteErr, docs) {
+        $in: doc.notes,
+      },
+    }, 'name value inputBy inputOn').exec((noteErr, docs) => {
       if (noteErr) {
-        console.error(noteErr);
+        error(noteErr);
         return res.status(500).send(noteErr.message);
       }
       return res.status(200).json(docs);
     });
   });
 
-  app.post('/travelers/:id/notes', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.archived('id', false), reqUtils.canWriteMw('id'), reqUtils.filter('body', ['name', 'value']), reqUtils.hasAll('body', ['name', 'value']), reqUtils.sanitize('body', ['name', 'value']), function (req, res) {
-    var doc = req[req.params.id];
-    var note = new TravelerNote({
+  app.post('/travelers/:id/notes', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.archived('id', false), reqUtils.canWriteMw('id'), reqUtils.filter('body', ['name', 'value']), reqUtils.hasAll('body', ['name', 'value']), reqUtils.sanitize('body', ['name', 'value']), (req, res) => {
+    const doc = req[req.params.id];
+    const note = new TravelerNote({
       traveler: doc._id,
       name: req.body.name,
       value: req.body.value,
       inputBy: req.session.userid,
-      inputOn: Date.now()
+      inputOn: Date.now(),
     });
-    note.save(function (noteErr) {
+    note.save((noteErr) => {
       if (noteErr) {
-        console.error(noteErr);
+        error(noteErr);
         return res.status(500).send(noteErr.message);
       }
       doc.notes.push(note._id);
       doc.manPower.addToSet({
         _id: req.session.userid,
-        username: req.session.username
+        username: req.session.username,
       });
       doc.updatedBy = req.session.userid;
       doc.updatedOn = Date.now();
-      doc.save(function (saveErr) {
+      doc.save((saveErr) => {
         if (saveErr) {
-          console.error(saveErr);
+          error(saveErr);
           return res.status(500).send(saveErr.message);
         }
         return res.send(204);
@@ -739,66 +748,66 @@ export function init(app: express.Application) {
     });
   });
 
-  app.put('/travelers/:id/finishedinput', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canWriteMw('id'), reqUtils.status('id', [1, 1.5, 2]), reqUtils.filter('body', ['finishedInput']), function (req, res) {
-    var doc = req[req.params.id];
+  app.put('/travelers/:id/finishedinput', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canWriteMw('id'), reqUtils.status('id', [1, 1.5, 2]), reqUtils.filter('body', ['finishedInput']), (req, res) => {
+    const doc = req[req.params.id];
     doc.update({
-      finishedInput: req.body.finishedInput
-    }, function (saveErr) {
+      finishedInput: req.body.finishedInput,
+    }, (saveErr) => {
       if (saveErr) {
-        console.error(saveErr);
+        error(saveErr);
         return res.status(500).send(saveErr.message);
       }
       return res.send(204);
     });
   });
 
-  app.post('/travelers/:id/uploads', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canWriteMw('id'), reqUtils.status('id', [1]), function (req, res) {
-    var doc = req[req.params.id];
+  app.post('/travelers/:id/uploads', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canWriteMw('id'), reqUtils.status('id', [1]), (req, res) => {
+    const doc = req[req.params.id];
 
     if (underscore.isEmpty(req.files)) {
       return res.status(400).send('Expecte One uploaded file');
     }
 
-    var data = new TravelerData({
+    const data = new TravelerData({
       traveler: doc._id,
       name: req.body.name,
       value: req.files[req.body.name].originalname,
       file: {
         path: req.files[req.body.name].path,
         encoding: req.files[req.body.name].encoding,
-        mimetype: req.files[req.body.name].mimetype
+        mimetype: req.files[req.body.name].mimetype,
       },
       inputType: req.body.type,
       inputBy: req.session.userid,
-      inputOn: Date.now()
+      inputOn: Date.now(),
     });
 
-    data.save(function (dataErr) {
+    data.save((dataErr) => {
       if (dataErr) {
-        console.error(dataErr);
+        error(dataErr);
         return res.status(500).send(dataErr.message);
       }
       doc.data.push(data._id);
       doc.updatedBy = req.session.userid;
       doc.updatedOn = Date.now();
-      doc.save(function (saveErr) {
+      doc.save((saveErr) => {
         if (saveErr) {
-          console.error(saveErr);
+          error(saveErr);
           return res.status(500).send(saveErr.message);
         }
-        var url = serviceUrl + '/data/' + data._id;
+        const url = serviceUrl + '/data/' + data._id;
         res.set('Location', url);
         return res.status(201).json({
-          location: url
+          location: url,
         });
       });
     });
   });
 
-  app.get('/data/:id', auth.ensureAuthenticated, reqUtils.exist('id', TravelerData), function (req, res) {
-    var data = req[req.params.id];
+  app.get('/data/:id', auth.ensureAuthenticated, reqUtils.exist('id', TravelerData), (req, res) => {
+    const data = req[req.params.id];
     if (data.inputType === 'file') {
-      fs.exists(data.file.path, function (exists) {
+      fs.exists(data.file.path, (exists) => {
         if (exists) {
           return res.sendfile(data.file.path);
         }
@@ -809,20 +818,20 @@ export function init(app: express.Application) {
     }
   });
 
-  app.get('/travelers/:id/share', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), function (req, res) {
-    var traveler = req[req.params.id];
+  app.get('/travelers/:id/share', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), (req, res) => {
+    const traveler = req[req.params.id];
     return res.render('share', {
       type: 'Traveler',
       id: req.params.id,
       title: traveler.title,
-      access: String(traveler.publicAccess)
+      access: String(traveler.publicAccess),
     });
   });
 
-  app.put('/travelers/:id/share/public', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.filter('body', ['access']), function (req, res) {
-    var traveler = req[req.params.id];
+  app.put('/travelers/:id/share/public', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.filter('body', ['access']), (req, res) => {
+    const traveler = req[req.params.id];
     // change the access
-    var access = req.body.access;
+    let access = req.body.access;
     if (['-1', '0', '1'].indexOf(access) === -1) {
       return res.status(400).send('not valid value');
     }
@@ -831,17 +840,17 @@ export function init(app: express.Application) {
       return res.send(204);
     }
     traveler.publicAccess = access;
-    traveler.save(function (saveErr) {
+    traveler.save((saveErr) => {
       if (saveErr) {
-        console.error(saveErr);
+        error(saveErr);
         return res.status(500).send(saveErr.message);
       }
       return res.status(200).send('public access is set to ' + req.body.access);
     });
   });
 
-  app.get('/travelers/:id/share/:list/json', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), function (req, res) {
-    var traveler = req[req.params.id];
+  app.get('/travelers/:id/share/:list/json', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), (req, res) => {
+    const traveler = req[req.params.id];
     if (req.params.list === 'users') {
       return res.status(200).json(traveler.sharedWith || []);
     }
@@ -851,9 +860,9 @@ export function init(app: express.Application) {
     return res.status(400).send('unknown share list.');
   });
 
-  app.post('/travelers/:id/share/:list', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), function (req, res) {
-    var traveler = req[req.params.id];
-    var share = -2;
+  app.post('/travelers/:id/share/:list', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), (req, res) => {
+    const traveler = req[req.params.id];
+    let share = -2;
     if (req.params.list === 'users') {
       if (req.body.name) {
         share = reqUtils.getSharedWith(traveler.sharedWith, req.body.name);
@@ -883,9 +892,9 @@ export function init(app: express.Application) {
     }
   });
 
-  app.put('/travelers/:id/share/:list/:shareid', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), function (req, res) {
-    var traveler = req[req.params.id];
-    var share;
+  app.put('/travelers/:id/share/:list/:shareid', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), (req, res) => {
+    const traveler = req[req.params.id];
+    let share;
     if (req.params.list === 'users') {
       share = traveler.sharedWith.id(req.params.shareid);
     }
@@ -901,13 +910,13 @@ export function init(app: express.Application) {
     } else {
       share.access = 0;
     }
-    traveler.save(function (saveErr) {
+    traveler.save((saveErr) => {
       if (saveErr) {
-        console.error(saveErr);
+        error(saveErr);
         return res.status(500).send(saveErr.message);
       }
       // check consistency of user's traveler list
-      var Target;
+      let Target;
       if (req.params.list === 'users') {
         Target = User;
       }
@@ -916,23 +925,23 @@ export function init(app: express.Application) {
       }
       Target.findByIdAndUpdate(req.params.shareid, {
         $addToSet: {
-          travelers: traveler._id
-        }
-      }, function (updateErr, target) {
+          travelers: traveler._id,
+        },
+      }, (updateErr, target) => {
         if (updateErr) {
-          console.error(updateErr);
+          error(updateErr);
         }
         if (!target) {
-          console.error('The user/group ' + req.params.userid + ' is not in the db');
+          error('The user/group ' + req.params.userid + ' is not in the db');
         }
       });
       return res.status(200).json(share);
     });
   });
 
-  app.delete('/travelers/:id/share/:list/:shareid', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), function (req, res) {
-    var traveler = req[req.params.id];
+  app.delete('/travelers/:id/share/:list/:shareid', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), (req, res) => {
+    const traveler = req[req.params.id];
     shareLib.removeShare(req, res, traveler);
   });
 
-};
+}

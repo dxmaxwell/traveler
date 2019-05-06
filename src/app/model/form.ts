@@ -75,21 +75,21 @@ const formSchema = new Schema({
   owner: String,
   status: {
     type: Number,
-    default: 0
+    default: 0,
   },
   transferredOn: Date,
   archivedOn: Date,
   archived: {
     type: Boolean,
-    default: false
+    default: false,
   },
   publicAccess: {
     type: Number,
-    default: -1
+    default: -1,
   },
   sharedWith: [share.userSchema],
   sharedGroup: [share.groupSchema],
-  html: String
+  html: String,
 });
 
 const formFileSchema = new Schema({
@@ -99,10 +99,10 @@ const formFileSchema = new Schema({
   file: {
     path: String,
     encoding: String,
-    mimetype: String
+    mimetype: String,
   },
   uploadedBy: String,
-  uploadedOn: Date
+  uploadedOn: Date,
 });
 
 export const Form = mongoose.model<Form>('Form', formSchema);

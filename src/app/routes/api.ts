@@ -14,6 +14,10 @@ import {
   TravelerNote,
 } from '../model/traveler';
 
+import {
+  error,
+} from '../shared/logging';
+
 
 let router: express.Router | null = null;
 
@@ -24,30 +28,31 @@ export function getRouter(opts?: {}) {
 
   router = express.Router(opts);
 
-  router.get('/api/v1/travelers', auth.basicAuth, function (req, res) {
-    var search: { archived: { $ne: boolean }, devices?: { $in: unknown[] }  } = {
+  router.get('/api/v1/travelers', auth.basicAuth, (req, res) => {
+    const search: { archived: { $ne: boolean }, devices?: { $in: unknown[] }  } = {
       archived: {
-        $ne: true
-      }
+        $ne: true,
+      },
     };
     if (Object.prototype.hasOwnProperty.call(req.query, 'device')) {
       search.devices = {
-        $in: [req.query.device]
+        $in: [req.query.device],
       };
     }
-    Traveler.find(search, 'title status devices createdBy clonedBy createdOn deadline updatedBy updatedOn sharedWith finishedInput totalInput').lean().exec(function (err, travelers) {
+    // tslint:disable:max-line-length
+    Traveler.find(search, 'title status devices createdBy clonedBy createdOn deadline updatedBy updatedOn sharedWith finishedInput totalInput').lean().exec((err, travelers) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       return res.status(200).json(travelers);
     });
   });
 
-  router.get('/api/v1/travelers/:id', auth.basicAuth, function (req, res) {
-    Traveler.findById(req.params.id, function (err, doc) {
+  router.get('/api/v1/travelers/:id', auth.basicAuth, (req, res) => {
+    Traveler.findById(req.params.id, (err, doc) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       if (!doc) {
@@ -57,10 +62,10 @@ export function getRouter(opts?: {}) {
     });
   });
 
-  router.get('/api/v1/travelers/:id/data', auth.basicAuth, function (req, res) {
-    Traveler.findById(req.params.id, function (err, doc) {
+  router.get('/api/v1/travelers/:id/data', auth.basicAuth, (req, res) => {
+    Traveler.findById(req.params.id, (err, doc) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       if (!doc) {
@@ -68,22 +73,22 @@ export function getRouter(opts?: {}) {
       }
       TravelerData.find({
         _id: {
-          $in: doc.data
-        }
-      }, 'name value inputType inputBy inputOn').exec(function (err, docs) {
-        if (err) {
-          console.error(err);
-          return res.status(500).send(err.message);
+          $in: doc.data,
+        },
+      }, 'name value inputType inputBy inputOn').exec((err1, docs) => {
+        if (err1) {
+          error(err1);
+          return res.status(500).send(err1.message);
         }
         return res.status(200).json(docs);
       });
     });
   });
 
-  router.get('/api/v1/travelers/:id/notes', auth.basicAuth, function (req, res) {
-    Traveler.findById(req.params.id, function (err, doc) {
+  router.get('/api/v1/travelers/:id/notes', auth.basicAuth, (req, res) => {
+    Traveler.findById(req.params.id, (err, doc) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       if (!doc) {
@@ -91,29 +96,29 @@ export function getRouter(opts?: {}) {
       }
       TravelerNote.find({
         _id: {
-          $in: doc.notes
-        }
-      }, 'name value inputBy inputOn').exec(function (err, docs) {
-        if (err) {
-          console.error(err);
-          return res.status(500).send(err.message);
+          $in: doc.notes,
+        },
+      }, 'name value inputBy inputOn').exec((err1, docs) => {
+        if (err1) {
+          error(err1);
+          return res.status(500).send(err1.message);
         }
         return res.status(200).json(docs);
       });
     });
   });
 
-  router.get('/api/v1/data/:id', auth.basicAuth, function (req, res) {
-    TravelerData.findById(req.params.id).exec(function (err, data) {
+  router.get('/api/v1/data/:id', auth.basicAuth, (req, res) => {
+    TravelerData.findById(req.params.id).exec((err, data) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       if (!data) {
         return res.status(410).send('gone');
       }
       if (data.inputType === 'file') {
-        fs.exists(data.file.path, function (exists) {
+        fs.exists(data.file.path, (exists) => {
           if (exists) {
             return res.sendfile(data.file.path);  // TODO: Path should relative to a configured root directory!
           }
@@ -126,4 +131,4 @@ export function getRouter(opts?: {}) {
   });
 
   return router;
-};
+}

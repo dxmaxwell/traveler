@@ -24,11 +24,11 @@ access :=  0 // for read or
 export const userSchema = new Schema({
   _id: String,
   username: String,
-  access: Number
+  access: Number,
 });
 
 export const groupSchema = new Schema({
   _id: String,
   groupname: String,
-  access: Number
+  access: Number,
 });

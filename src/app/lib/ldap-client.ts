@@ -248,27 +248,27 @@ export class Client implements IClient {
 
   // Maintained to support legacy callback-based code! //
   public legacySearch(base: string, opts: ldap.SearchOptions, raw: boolean, cb: (err: any, entry?: any[]) => void) {
-    this.client.search(base, opts, function (err, result) {
+    this.client.search(base, opts, (err, result) => {
       if (err) {
-        console.log(JSON.stringify(err));
+        debug(JSON.stringify(err));
         return cb(err);
       }
-      var items = [];
-      result.on('searchEntry', function (entry) {
+      const items = [];
+      result.on('searchEntry', (entry) => {
         if (raw) {
           items.push(entry.raw);
         } else {
           items.push(entry.object);
         }
       });
-      result.on('error', function (e) {
-        console.log(JSON.stringify(e));
+      result.on('error', (e) => {
+        debug(JSON.stringify(e));
         return cb(e);
       });
-      result.on('end', function (r) {
+      result.on('end', (r) => {
         if (r.status !== 0) {
-          var e = 'non-zero status from LDAP search: ' + result.status;
-          console.log(JSON.stringify(e));
+          const e = 'non-zero status from LDAP search: ' + result.status;
+          debug(JSON.stringify(e));
           return cb(e);
         }
         switch (items.length) {

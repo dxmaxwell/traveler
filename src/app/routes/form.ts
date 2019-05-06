@@ -20,6 +20,9 @@ import {
   User,
 } from '../model/user';
 
+import {
+  error,
+} from '../shared/logging';
 
 let serviceUrl = '';
 
@@ -33,49 +36,50 @@ export function setServiceUrl(url: string) {
 
 export function init(app: express.Application) {
 
-  app.get('/forms', auth.ensureAuthenticated, function (req, res) {
+  app.get('/forms', auth.ensureAuthenticated, (req, res) => {
     res.render('forms');
   });
 
-  app.get('/forms/json', auth.ensureAuthenticated, function (req, res) {
+  app.get('/forms/json', auth.ensureAuthenticated, (req, res) => {
     Form.find({
       createdBy: req.session.userid,
       archived: {
-        $ne: true
+        $ne: true,
       },
       owner: {
-        $exists: false
-      }
-    }, 'title createdBy createdOn updatedBy updatedOn publicAccess sharedWith sharedGroup').exec(function (err, forms) {
+        $exists: false,
+      },
+    }, 'title createdBy createdOn updatedBy updatedOn publicAccess sharedWith sharedGroup').exec((err, forms) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       res.status(200).json(forms);
     });
   });
 
-  app.get('/transferredforms/json', auth.ensureAuthenticated, function (req, res) {
+  app.get('/transferredforms/json', auth.ensureAuthenticated, (req, res) => {
     Form.find({
       owner: req.session.userid,
       archived: {
-        $ne: true
-      }
-    }, 'title createdBy createdOn updatedBy updatedOn transferredOn publicAccess sharedWith sharedGroup').exec(function (err, forms) {
+        $ne: true,
+      },
+    // tslint:disable:max-line-length
+    }, 'title createdBy createdOn updatedBy updatedOn transferredOn publicAccess sharedWith sharedGroup').exec((err, forms) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       res.status(200).json(forms);
     });
   });
 
-  app.get('/sharedforms/json', auth.ensureAuthenticated, function (req, res) {
+  app.get('/sharedforms/json', auth.ensureAuthenticated, (req, res) => {
     User.findOne({
-      _id: req.session.userid
-    }, 'forms').exec(function (err, me) {
+      _id: req.session.userid,
+    }, 'forms').exec((err, me) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       if (!me) {
@@ -83,14 +87,14 @@ export function init(app: express.Application) {
       }
       Form.find({
         _id: {
-          $in: me.forms
+          $in: me.forms,
         },
         archived: {
-          $ne: true
-        }
-      }, 'title owner updatedBy updatedOn publicAccess sharedWith sharedGroup').exec(function (fErr, forms) {
+          $ne: true,
+        },
+      }, 'title owner updatedBy updatedOn publicAccess sharedWith sharedGroup').exec((fErr, forms) => {
         if (fErr) {
-          console.error(fErr);
+          error(fErr);
           return res.status(500).send(fErr.message);
         }
         res.status(200).json(forms);
@@ -98,19 +102,19 @@ export function init(app: express.Application) {
     });
   });
 
-  app.get('/groupsharedforms/json', auth.ensureAuthenticated, function (req, res) {
+  app.get('/groupsharedforms/json', auth.ensureAuthenticated, (req, res) => {
     Group.find({
       _id: {
-        $in: req.session.memberOf
-      }
-    }, 'forms').exec(function (err, groups) {
+        $in: req.session.memberOf,
+      },
+    }, 'forms').exec((err, groups) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
-      var formids = [];
-      var i;
-      var j;
+      const formids = [];
+      let i;
+      let j;
       // merge the forms arrays
       for (i = 0; i < groups.length; i += 1) {
         for (j = 0; j < groups[i].forms.length; j += 1) {
@@ -121,14 +125,14 @@ export function init(app: express.Application) {
       }
       Form.find({
         _id: {
-          $in: formids
+          $in: formids,
         },
         archived: {
-          $ne: true
-        }
-      }, 'title owner updatedBy updatedOn publicAccess sharedWith sharedGroup').exec(function (fErr, forms) {
+          $ne: true,
+        },
+      }, 'title owner updatedBy updatedOn publicAccess sharedWith sharedGroup').exec((fErr, forms) => {
         if (fErr) {
-          console.error(fErr);
+          error(fErr);
           return res.status(500).send(fErr.message);
         }
         res.status(200).json(forms);
@@ -136,50 +140,50 @@ export function init(app: express.Application) {
     });
   });
 
-  app.get('/archivedforms/json', auth.ensureAuthenticated, function (req, res) {
+  app.get('/archivedforms/json', auth.ensureAuthenticated, (req, res) => {
     Form.find({
       createdBy: req.session.userid,
-      archived: true
-    }, 'title archivedOn sharedWith sharedGroup').exec(function (err, forms) {
+      archived: true,
+    }, 'title archivedOn sharedWith sharedGroup').exec((err, forms) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       res.status(200).json(forms);
     });
   });
 
-  app.get('/publicforms', auth.ensureAuthenticated, function (req, res) {
+  app.get('/publicforms', auth.ensureAuthenticated, (req, res) => {
     res.render('public-forms');
   });
 
-  app.get('/publicforms/json', auth.ensureAuthenticated, function (req, res) {
+  app.get('/publicforms/json', auth.ensureAuthenticated, (req, res) => {
     Form.find({
       publicAccess: {
-        $in: [0, 1]
+        $in: [0, 1],
       },
       archived: {
-        $ne: true
-      }
-    }).exec(function (err, forms) {
+        $ne: true,
+      },
+    }).exec((err, forms) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       res.status(200).json(forms);
     });
   });
 
-  app.get('/forms/new', auth.ensureAuthenticated, function (req, res) {
+  app.get('/forms/new', auth.ensureAuthenticated, (req, res) => {
     return res.render('form-new', {
       // prefix: req.proxied ? req.proxied_prefix : ''
       prefix: '',
     });
   });
 
-  app.get('/forms/:id', auth.ensureAuthenticated, reqUtils.exist('id', Form), function (req, res) {
-    var form = req[req.params.id];
-    var access = reqUtils.getAccess(req, form);
+  app.get('/forms/:id', auth.ensureAuthenticated, reqUtils.exist('id', Form), (req, res) => {
+    const form = req[req.params.id];
+    const access = reqUtils.getAccess(req, form);
 
     if (access === -1) {
       return res.status(403).send('you are not authorized to access this resource');
@@ -196,19 +200,19 @@ export function init(app: express.Application) {
         html: form.html,
         status: form.status,
         prefix: '',
-        //prefix: req.proxied ? req.proxied_prefix : ''
+        // prefix: req.proxied ? req.proxied_prefix : ''
       });
     }
 
     return res.redirect(serviceUrl + '/forms/' + req.params.id + '/preview');
   });
 
-  app.get('/forms/:id/json', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canReadMw('id'), function (req, res) {
+  app.get('/forms/:id/json', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canReadMw('id'), (req, res) => {
     return res.status(200).json(req[req.params.id]);
   });
 
-  app.post('/forms/:id/uploads', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canReadMw('id'), function (req, res) {
-    var doc = req[req.params.id];
+  app.post('/forms/:id/uploads', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canReadMw('id'), (req, res) => {
+    const doc = req[req.params.id];
     if (underscore.isEmpty(req.files)) {
       return res.status(400).send('Expecte One uploaded file');
     }
@@ -217,40 +221,40 @@ export function init(app: express.Application) {
       return res.status(400).send('Expecte input name');
     }
 
-    var file = new FormFile({
+    const file = new FormFile({
       form: doc._id,
       value: req.files[req.body.name].originalname,
       file: {
         path: req.files[req.body.name].path,
         encoding: req.files[req.body.name].encoding,
-        mimetype: req.files[req.body.name].mimetype
+        mimetype: req.files[req.body.name].mimetype,
       },
       inputType: req.body.type,
       uploadedBy: req.session.userid,
-      uploadedOn: Date.now()
+      uploadedOn: Date.now(),
     });
 
-    file.save(function (saveErr, newfile) {
+    file.save((saveErr, newfile) => {
       if (saveErr) {
-        console.error(saveErr);
+        error(saveErr);
         return res.status(500).send(saveErr.message);
       }
-      var url = serviceUrl + '/formfiles/' + newfile.id;
+      const url = serviceUrl + '/formfiles/' + newfile.id;
       res.set('Location', url);
       return res.status(201).send('The uploaded file is at <a target="_blank" href="' + url + '">' + url + '</a>');
     });
   });
 
-  app.get('/formfiles/:id', auth.ensureAuthenticated, reqUtils.exist('id', FormFile), function (req, res) {
-    var data = req[req.params.id];
+  app.get('/formfiles/:id', auth.ensureAuthenticated, reqUtils.exist('id', FormFile), (req, res) => {
+    const data = req[req.params.id];
     if (data.inputType === 'file') {
       return res.sendfile(data.file.path);
     }
     return res.status(500).send('it is not a file');
   });
 
-  app.get('/forms/:id/preview', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canReadMw('id'), function (req, res) {
-    var form = req[req.params.id];
+  app.get('/forms/:id/preview', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canReadMw('id'), (req, res) => {
+    const form = req[req.params.id];
     return res.render('form-viewer', {
       id: req.params.id,
       title: form.title,
@@ -260,20 +264,20 @@ export function init(app: express.Application) {
     });
   });
 
-  app.get('/forms/:id/share', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), function (req, res) {
-    var form = req[req.params.id];
+  app.get('/forms/:id/share', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), (req, res) => {
+    const form = req[req.params.id];
     return res.render('share', {
       type: 'form',
       id: req.params.id,
       title: form.title,
-      access: String(form.publicAccess)
+      access: String(form.publicAccess),
     });
   });
 
-  app.put('/forms/:id/share/public', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['access']), function (req, res) {
-    var form = req[req.params.id];
+  app.put('/forms/:id/share/public', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['access']), (req, res) => {
+    const form = req[req.params.id];
     // change the access
-    var access = req.body.access;
+    let access = req.body.access;
     if (['-1', '0', '1'].indexOf(access) === -1) {
       return res.status(400).send('not valid value');
     }
@@ -282,17 +286,17 @@ export function init(app: express.Application) {
       return res.send(204);
     }
     form.publicAccess = access;
-    form.save(function (saveErr) {
+    form.save((saveErr) => {
       if (saveErr) {
-        console.error(saveErr);
+        error(saveErr);
         return res.status(500).send(saveErr.message);
       }
       return res.status(200).send('public access is set to ' + req.body.access);
     });
   });
 
-  app.get('/forms/:id/share/:list/json', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), function (req, res) {
-    var form = req[req.params.id];
+  app.get('/forms/:id/share/:list/json', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), (req, res) => {
+    const form = req[req.params.id];
     if (req.params.list === 'users') {
       return res.status(200).json(form.sharedWith || []);
     }
@@ -302,9 +306,9 @@ export function init(app: express.Application) {
     return res.status(400).send('unknown share list.');
   });
 
-  app.post('/forms/:id/share/:list', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), function (req, res) {
-    var form = req[req.params.id];
-    var share = -2;
+  app.post('/forms/:id/share/:list', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), (req, res) => {
+    const form = req[req.params.id];
+    let share = -2;
     if (req.params.list === 'users') {
       if (req.body.name) {
         share = reqUtils.getSharedWith(form.sharedWith, req.body.name);
@@ -334,9 +338,9 @@ export function init(app: express.Application) {
     }
   });
 
-  app.put('/forms/:id/share/:list/:shareid', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['access']), function (req, res) {
-    var form = req[req.params.id];
-    var share;
+  app.put('/forms/:id/share/:list/:shareid', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['access']), (req, res) => {
+    const form = req[req.params.id];
+    let share;
     if (req.params.list === 'users') {
       share = form.sharedWith.id(req.params.shareid);
     }
@@ -354,13 +358,13 @@ export function init(app: express.Application) {
     } else {
       return res.status(400).send('cannot take the access ' + req.body.access);
     }
-    form.save(function (saveErr) {
+    form.save((saveErr) => {
       if (saveErr) {
-        console.error(saveErr);
+        error(saveErr);
         return res.status(500).send(saveErr.message);
       }
       // check consistency of user's form list
-      var Target;
+      let Target;
       if (req.params.list === 'users') {
         Target = User;
       }
@@ -369,27 +373,27 @@ export function init(app: express.Application) {
       }
       Target.findByIdAndUpdate(req.params.shareid, {
         $addToSet: {
-          forms: form._id
-        }
-      }, function (updateErr, target) {
+          forms: form._id,
+        },
+      }, (updateErr, target) => {
         if (updateErr) {
-          console.error(updateErr);
+          error(updateErr);
         }
         if (!target) {
-          console.error('The user/group ' + req.params.userid + ' is not in the db');
+          error('The user/group ' + req.params.userid + ' is not in the db');
         }
       });
       return res.status(200).json(share);
     });
   });
 
-  app.delete('/forms/:id/share/:list/:shareid', reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), auth.ensureAuthenticated, function (req, res) {
-    var form = req[req.params.id];
+  app.delete('/forms/:id/share/:list/:shareid', reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), auth.ensureAuthenticated, (req, res) => {
+    const form = req[req.params.id];
     shareLib.removeShare(req, res, form);
   });
 
-  app.post('/forms', auth.ensureAuthenticated, reqUtils.sanitize('body', ['html']), function (req, res) {
-    var form: {
+  app.post('/forms', auth.ensureAuthenticated, reqUtils.sanitize('body', ['html']), (req, res) => {
+    const form: {
       html?: unknown;
       clonedFrom?: unknown,
       title?: unknown;
@@ -406,21 +410,21 @@ export function init(app: express.Application) {
     form.createdBy = req.session.userid;
     form.createdOn = Date.now();
     form.sharedWith = [];
-    (new Form(form)).save(function (err, newform) {
+    (new Form(form)).save((err, newform) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
-      var url = serviceUrl + '/forms/' + newform.id + '/';
+      const url = serviceUrl + '/forms/' + newform.id + '/';
 
       res.set('Location', url);
       return res.status(201).send('You can see the new form at <a href="' + url + '">' + url + '</a>');
     });
   });
 
-  app.post('/forms/:id/clone', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canReadMw('id'), function (req, res) {
-    var doc = req[req.params.id];
-    var form: {
+  app.post('/forms/:id/clone', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canReadMw('id'), (req, res) => {
+    const doc = req[req.params.id];
+    const form: {
       html?: unknown;
       clonedFrom?: unknown,
       title?: unknown;
@@ -434,19 +438,19 @@ export function init(app: express.Application) {
     form.clonedFrom = doc._id;
     form.sharedWith = [];
 
-    (new Form(form)).save(function (saveErr, newform) {
+    (new Form(form)).save((saveErr, newform) => {
       if (saveErr) {
-        console.error(saveErr);
+        error(saveErr);
         return res.status(500).send(saveErr.message);
       }
-      var url = serviceUrl + '/forms/' + newform.id + '/';
+      const url = serviceUrl + '/forms/' + newform.id + '/';
       res.set('Location', url);
       return res.status(201).send('You can see the new form at <a href="' + url + '">' + url + '</a>');
     });
   });
 
-  app.put('/forms/:id/archived', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['archived']), function (req, res) {
-    var doc = req[req.params.id];
+  app.put('/forms/:id/archived', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['archived']), (req, res) => {
+    const doc = req[req.params.id];
     if (doc.archived === req.body.archived) {
       return res.send(204);
     }
@@ -456,25 +460,25 @@ export function init(app: express.Application) {
       doc.archivedOn = Date.now();
     }
 
-    doc.save(function (saveErr, newDoc) {
+    doc.save((saveErr, newDoc) => {
       if (saveErr) {
-        console.error(saveErr);
+        error(saveErr);
         return res.status(500).send(saveErr.message);
       }
       return res.status(200).send('Form ' + req.params.id + ' archived state set to ' + newDoc.archived);
     });
   });
 
-  app.put('/forms/:id/owner', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['name']), function (req, res) {
-    var doc = req[req.params.id];
+  app.put('/forms/:id/owner', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['name']), (req, res) => {
+    const doc = req[req.params.id];
     shareLib.changeOwner(req, res, doc);
   });
 
-  app.put('/forms/:id', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canWriteMw('id'), reqUtils.status('id', [0]), reqUtils.filter('body', ['html', 'title']), reqUtils.sanitize('body', ['html', 'title']), function (req, res) {
+  app.put('/forms/:id', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canWriteMw('id'), reqUtils.status('id', [0]), reqUtils.filter('body', ['html', 'title']), reqUtils.sanitize('body', ['html', 'title']), (req, res) => {
     if (!req.is('json')) {
       return res.status(415).send('json request expected');
     }
-    var doc = req[req.params.id];
+    const doc = req[req.params.id];
     if (req.body.hasOwnProperty('html')) {
       doc.html = req.body.html;
     }
@@ -488,18 +492,18 @@ export function init(app: express.Application) {
 
     doc.updatedBy = req.session.userid;
     doc.updatedOn = Date.now();
-    doc.save(function (saveErr, newDoc) {
+    doc.save((saveErr, newDoc) => {
       if (saveErr) {
-        console.dir(saveErr);
+        error(saveErr);
         return res.status(500).send(saveErr.message);
       }
       return res.json(newDoc);
     });
   });
 
-  app.put('/forms/:id/status', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['status']), reqUtils.hasAll('body', ['status']), function (req, res) {
-    var f = req[req.params.id];
-    var s = req.body.status;
+  app.put('/forms/:id/status', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['status']), reqUtils.hasAll('body', ['status']), (req, res) => {
+    const f = req[req.params.id];
+    const s = req.body.status;
 
     if ([0, 0.5, 1, 2].indexOf(s) === -1) {
       return res.status(400).send('invalid status');
@@ -542,13 +546,13 @@ export function init(app: express.Application) {
       }
     }
 
-    f.save(function (err) {
+    f.save((err) => {
       if (err) {
-        console.error(err);
+        error(err);
         return res.status(500).send(err.message);
       }
       return res.status(200).send('status updated to ' + s);
     });
 
   });
-};
+}

@@ -3,11 +3,23 @@
  */
 import * as url from 'url';
 
+import * as basic from 'basic-auth';
 import Client = require('cas.js');
+import * as express from 'express';
+
+import {
+  error,
+  info,
+  warn,
+} from '../shared/logging';
 
 import * as ldapjs from './ldap-client';
 
 import { User } from '../model/user';
+
+type Request = express.Request;
+type Response = express.Response;
+type NextFunction = express.NextFunction;
 
 interface AliasConfig {
   [key: string]: string | undefined;
@@ -66,30 +78,24 @@ export function setAPIUsers(users: ApiUserConfig) {
   apiUsers = users;
 }
 
-// var config = require('../config/config.js');
-// var ad = config.ad;
-// var auth = config.auth;
 
-// var apiUsers = config.api.users;
-
-
-export function proxied(req, res, next) {
+export function proxied(req: Request, res: Response, next: NextFunction) {
   if (req.get('x-forwarded-host') && req.get('x-forwarded-host') === auth.proxy) {
-    req.proxied = true;
-    req.proxied_prefix = url.parse(auth.proxied_service).pathname;
+    (req as any).proxied = true;
+    (req as any).proxied_prefix = url.parse(auth.proxied_service).pathname;
   }
   next();
 }
 
 function cn(s) {
-  var first = s.split(',', 1)[0];
+  const first = s.split(',', 1)[0];
   return first.substr(3).toLowerCase();
 }
 
 function filterGroup(a) {
-  var output = [];
-  var i;
-  var group;
+  const output = [];
+  let i;
+  let group;
   for (i = 0; i < a.length; i += 1) {
     group = cn(a[i]);
     if (group.indexOf('lab.frib') === 0) {
@@ -102,17 +108,18 @@ function filterGroup(a) {
   return output;
 }
 
-export function ensureAuthenticated(req, res, next) {
-  var ticketUrl = url.parse(req.url, true);
+export function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
+  const ticketUrl = url.parse(req.url, true);
   if (!!req.session.userid) {
     // logged in already
     if (!!req.query.ticket) {
       // remove the ticket query param
       delete ticketUrl.query.ticket;
       return res.redirect(301, url.format({
+        // tslint:disable:max-line-length
         // pathname: req.proxied ? url.resolve(auth.proxied_service + '/', '.' + ticketUrl.pathname) : ticketUrl.pathname,
         pathname: ticketUrl.pathname,
-        query: ticketUrl.query
+        query: ticketUrl.query,
       }));
     }
     next();
@@ -125,34 +132,34 @@ export function ensureAuthenticated(req, res, next) {
     //   cas.service = auth.login_service;
     // }
     // validate the ticket
-    cas.validate(req.query.ticket, function (err, casresponse, result) {
+    cas.validate(req.query.ticket, (err, casresponse, result) => {
       if (err) {
-        console.error(err.message);
-        return res.send(401, err.message);
+        error(err.message);
+        return res.status(401).send(err.message);
       }
       if (result.validated) {
-        var userid = result.username;
+        const userid = result.username;
         // set userid in session
         req.session.userid = userid;
-        var searchFilter = ad.searchFilter.replace('_id', userid);
-        var opts = {
+        const searchFilter = ad.searchFilter.replace('_id', userid);
+        const opts = {
           filter: searchFilter,
           attributes: ad.memberAttributes,
-          scope: 'sub'
+          scope: 'sub',
         };
 
         // query ad about other attribute
-        ldapClient.legacySearch(ad.searchBase, opts, false, function (err, result) {
-          if (err) {
-            console.error(err.name + ' : ' + err.message);
-            return res.send(500, 'something wrong with ad');
+        ldapClient.legacySearch(ad.searchBase, opts, false, (err1, result1) => {
+          if (err1) {
+            error(err.name + ' : ' + err1.message);
+            return res.status(500).send('something wrong with ad');
           }
-          if (result.length === 0) {
-            console.warn('cannot find ' + userid);
-            return res.send(500, userid + ' is not found!');
+          if (result1.length === 0) {
+            warn('cannot find ' + userid);
+            return res.status(500).send(userid + ' is not found!');
           }
-          if (result.length > 1) {
-            return res.send(500, userid + ' is not unique!');
+          if (result1.length > 1) {
+            return res.status(500).send(userid + ' is not unique!');
           }
 
           // set username and memberof in session
@@ -161,25 +168,25 @@ export function ensureAuthenticated(req, res, next) {
 
           // load others from db
           User.findOne({
-            _id: userid
-          }).exec(function (err, user) {
-            if (err) {
-              console.error(err.message);
+            _id: userid,
+          }).exec((err2, user) => {
+            if (err2) {
+              error(err2.message);
             }
             if (user) {
               req.session.roles = user.roles;
               // update user last visited on
               User.findByIdAndUpdate(user._id, {
-                lastVisitedOn: Date.now()
-              }, function (err, update) {
-                if (err) {
-                  console.error(err.message);
+                lastVisitedOn: Date.now(),
+              }, (err3, update) => {
+                if (err3) {
+                  error(err3.message);
                 }
               });
             } else {
               // create a new user
               req.session.roles = [];
-              var first = new User({
+              const first = new User({
                 _id: userid,
                 name: result[0].displayName,
                 email: result[0].mail,
@@ -187,16 +194,16 @@ export function ensureAuthenticated(req, res, next) {
                 phone: result[0].telephoneNumber,
                 mobile: result[0].mobile,
                 roles: [],
-                lastVisitedOn: Date.now()
+                lastVisitedOn: Date.now(),
               });
 
-              first.save(function (err, newUser) {
-                if (err) {
-                  console.error(err.message);
-                  console.error(first.toJSON());
-                  return res.send(500, 'cannot log in. Please contact admin.');
+              first.save((err3, newUser) => {
+                if (err3) {
+                  error(err3.message);
+                  error(first.toJSON());
+                  return res.status(500).send('cannot log in. Please contact admin.');
                 }
-                console.info('A new user created : ' + newUser);
+                info('A new user created : ' + newUser);
               });
             }
             if (req.session.landing && req.session.landing !== '/login') {
@@ -211,7 +218,7 @@ export function ensureAuthenticated(req, res, next) {
           });
         });
       } else {
-        console.error('CAS reject this ticket');
+        error('CAS reject this ticket');
         // return res.redirect(req.proxied ? auth.login_proxied_service : auth.login_service);
         return res.redirect(authConfig.service);
       }
@@ -222,7 +229,7 @@ export function ensureAuthenticated(req, res, next) {
       // TODO: might need to properly set the WWW-Authenticate header
       // res.set('WWW-Authenticate', 'CAS realm="' + (req.proxied ? auth.proxied_service : auth.service) + '"');
       res.set('WWW-Authenticate', 'CAS realm="' + authConfig.service + '"');
-      return res.send(401, 'xhr cannot be authenticated');
+      return res.status(401).send('xhr cannot be authenticated');
     } else {
       // set the landing, the first unauthenticated url
       req.session.landing = req.url;
@@ -236,14 +243,14 @@ export function ensureAuthenticated(req, res, next) {
 }
 
 
-export function sessionLocals(req, res, next) {
-  res.locals.session = req.session;
-  res.locals.prefix =  req.proxied ? req.proxied_prefix : '';
+export function sessionLocals(req: Request, res: Response, next: NextFunction) {
+  (res as any).locals.session = req.session;
+  (res as any).locals.prefix =  (req as any).proxied ? (req as any).proxied_prefix : '';
   next();
 }
 
 
-export function checkAuth(req, res, next) {
+export function checkAuth(req: Request, res: Response, next: NextFunction) {
   if (req.query.ticket) {
     ensureAuthenticated(req, res, next);
   } else {
@@ -252,22 +259,20 @@ export function checkAuth(req, res, next) {
 }
 
 export function verifyRole(role) {
-  return function (req, res, next) {
+  return (req: Request, res: Response, next: NextFunction) => {
     // console.log(req.session);
     if (req.session.roles) {
       if (req.session.roles.indexOf(role) > -1) {
         next();
       } else {
-        return res.send(403, "You are not authorized to access this resource. ");
+        return res.status(403).send('You are not authorized to access this resource.');
       }
     } else {
-      console.log("Cannot find the user's role.");
-      return res.send(500, "something wrong for the user's session");
+      warn("Cannot find the user's role.");
+      return res.status(500).send('something wrong for the user\'s session');
     }
   };
 }
-
-var basic = require('basic-auth');
 
 function notKnown(cred) {
   if (apiUsers.hasOwnProperty(cred.name)) {
@@ -278,8 +283,8 @@ function notKnown(cred) {
   return true;
 }
 
-export function basicAuth(req, res, next) {
-  var cred = basic(req);
+export function basicAuth(req: Request, res: Response, next: NextFunction) {
+  const cred = basic(req);
   if (!cred || notKnown(cred)) {
     res.set('WWW-Authenticate', 'Basic realm="api"');
     return res.send(401);

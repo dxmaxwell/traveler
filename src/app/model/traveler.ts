@@ -101,13 +101,13 @@ const formSchema = new Schema({
   html: String,
   activatedOn: [Date],
   reference: ObjectId,
-  alias: String
+  alias: String,
 });
 
 
 const userSchema = new Schema({
   _id: String,
-  username: String
+  username: String,
 });
 
 /**
@@ -132,7 +132,7 @@ const travelerSchema = new Schema({
   manPower: [userSchema],
   status: {
     type: Number,
-    default: 0
+    default: 0,
   },
   createdBy: String,
   createdOn: Date,
@@ -146,7 +146,7 @@ const travelerSchema = new Schema({
   deadline: Date,
   publicAccess: {
     type: Number,
-    default: 0
+    default: 0,
   },
   sharedWith: [share.userSchema],
   sharedGroup: [share.groupSchema],
@@ -158,16 +158,16 @@ const travelerSchema = new Schema({
   totalInput: {
     type: Number,
     default: 0,
-    min: 0
+    min: 0,
   },
   finishedInput: {
     type: Number,
     default: 0,
-    min: 0
+    min: 0,
   },
   archived: {
     type: Boolean,
-    default: false
+    default: false,
   }
 });
 
@@ -186,11 +186,11 @@ const travelerDataSchema = new Schema({
   file: {
     path: String,
     encoding: String,
-    mimetype: String
+    mimetype: String,
   },
   inputType: String,
   inputBy: String,
-  inputOn: Date
+  inputOn: Date,
 });
 
 const travelerNoteSchema = new Schema({
@@ -198,7 +198,7 @@ const travelerNoteSchema = new Schema({
   name: String,
   value: String,
   inputBy: String,
-  inputOn: Date
+  inputOn: Date,
 });
 
 

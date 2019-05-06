@@ -2,8 +2,22 @@
  * Utilities for handling requests
  */
 
+import * as express from 'express';
+import * as mongoose from 'mongoose';
 import * as sanitizeCaja from 'sanitize-caja';
 import * as _ from 'underscore';
+
+import {
+  error,
+  info,
+  warn,
+} from '../shared/logging';
+
+type Request = express.Request;
+type Response = express.Response;
+type NextFunction = express.NextFunction;
+
+type ObjectId = mongoose.Types.ObjectId;
 
 /**
  * Check the property list of http request. Set the property to null if it is
@@ -14,9 +28,9 @@ import * as _ from 'underscore';
  * @return {Function}       The middleware
  */
 export function filter(list, names) {
-  return function (req, res, next) {
-    var k;
-    var found = false;
+  return (req: Request, res: Response, next: NextFunction) => {
+    let k;
+    let found = false;
     for (k in req[list]) {
       if (Object.prototype.hasOwnProperty.call(req[list], k)) {
         if (names.indexOf(k) !== -1) {
@@ -29,20 +43,20 @@ export function filter(list, names) {
     if (found) {
       next();
     } else {
-      return res.send(400, 'cannot find required information in ' + list);
+      return res.status(400).send('cannot find required information in ' + list);
     }
   };
 }
 
 
 function sanitizeJson(input) {
-  var jsonString = JSON.stringify(input);
+  let jsonString = JSON.stringify(input);
   jsonString = sanitizeCaja(jsonString);
-  var output = null;
+  let output = null;
   try {
     output = JSON.parse(jsonString);
   } catch (e) {
-    console.error(e);
+    error(e);
   }
   return output;
 }
@@ -54,8 +68,8 @@ function sanitizeJson(input) {
  * @return {Function}       The middleware
  */
 export function sanitize(list, names) {
-  return function (req, res, next) {
-    names.forEach(function (n) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    names.forEach((n) => {
       if (Object.prototype.hasOwnProperty.call(req[list], n)) {
         if (_.isString(req[list][n])) {
           req[list][n] = sanitizeCaja(req[list][n]);
@@ -77,9 +91,9 @@ export function sanitize(list, names) {
  * @return {Function}        The middleware
  */
 export function hasAll(list, names) {
-  return function (req, res, next) {
-    var i;
-    var miss = false;
+  return (req: Request, res: Response, next: NextFunction) => {
+    let i;
+    let miss = false;
     for (i = 0; i < names.length; i += 1) {
       if (!Object.prototype.hasOwnProperty.call(req[list], names[i])) {
         miss = true;
@@ -87,7 +101,7 @@ export function hasAll(list, names) {
       }
     }
     if (miss) {
-      return res.send(400, 'cannot find required information in ' + list);
+      return res.status(400).send('cannot find required information in ' + list);
     }
     next();
   };
@@ -100,15 +114,15 @@ export function hasAll(list, names) {
  * @return {Function}             the middleware
  */
 export function exist(pName, collection) {
-  return function (req, res, next) {
-    collection.findById(req.params[pName]).exec(function (err, item) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    collection.findById(req.params[pName]).exec((err, item) => {
       if (err) {
-        console.error(err);
-        return res.send(500, err.message);
+        error(err);
+        return res.status(500).send(err.message);
       }
 
       if (!item) {
-        return res.send(404, 'item ' + req.params[pName] + ' not found');
+        return res.status(404).send('item ' + req.params[pName] + ' not found');
       }
 
       req[req.params[pName]] = item;
@@ -124,10 +138,10 @@ export function exist(pName, collection) {
  * @return {Function}       the middleware
  */
 export function status(pName, sList) {
-  return function (req, res, next) {
-    var s = req[req.params[pName]].status;
+  return (req: Request, res: Response, next: NextFunction) => {
+    const s = req[req.params[pName]].status;
     if (sList.indexOf(s) === -1) {
-      return res.send(400, 'request is not allowed for item ' + req.params[pName] + ' status ' + s);
+      return res.status(400).send('request is not allowed for item ' + req.params[pName] + ' status ' + s);
     }
     next();
   };
@@ -140,10 +154,10 @@ export function status(pName, sList) {
  * @return {Function}     the middleware
  */
 export function archived(pName, a) {
-  return function (req, res, next) {
-    var arch = req[req.params[pName]].archived;
+  return (req: Request, res: Response, next: NextFunction) => {
+    const arch = req[req.params[pName]].archived;
     if (a !== arch) {
-      return res.send(400, 'request is not allowed for item ' + req.params[pName] + ' archived ' + arch);
+      return res.status(400).send('request is not allowed for item ' + req.params[pName] + ' archived ' + arch);
     }
     next();
   };
@@ -155,7 +169,15 @@ access := -1 // no access
         | 1  // write
 *****/
 
-export function getAccess(req, doc) {
+interface Document {
+  publicAccess?: number;
+  createdBy?: string;
+  owner?: string;
+  sharedWith?: mongoose.Types.DocumentArray<any>;
+  sharedGroup?: mongoose.Types.DocumentArray<any>;
+}
+
+export function getAccess(req: Request, doc: Document) {
   if (doc.publicAccess === 1) {
     return 1;
   }
@@ -168,7 +190,7 @@ export function getAccess(req, doc) {
   if (doc.sharedWith && doc.sharedWith.id(req.session.userid)) {
     return doc.sharedWith.id(req.session.userid).access;
   }
-  var i;
+  let i;
   if (doc.sharedGroup) {
     for (i = 0; i < req.session.memberOf.length; i += 1) {
       if (doc.sharedGroup.id(req.session.memberOf[i]) && doc.sharedGroup.id(req.session.memberOf[i]).access === 1) {
@@ -187,7 +209,7 @@ export function getAccess(req, doc) {
   return -1;
 }
 
-export function canWrite(req, doc) {
+export function canWrite(req: Request, doc: Document) {
   return getAccess(req, doc) === 1;
 }
 
@@ -197,17 +219,17 @@ export function canWrite(req, doc) {
  * @param  {String} pName the document to check
  * @return {Function}     the middleware
  */
-export function canWriteMw(pName) {
-  return function (req, res, next) {
+export function canWriteMw(pName: string) {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (!canWrite(req, req[req.params[pName]])) {
-      return res.send(403, 'you are not authorized to access this resource');
+      return res.status(403).send('you are not authorized to access this resource');
     }
     next();
   };
 }
 
 
-export function canRead(req, doc) {
+export function canRead(req: Request, doc: Document) {
   return getAccess(req, doc) >= 0;
 }
 
@@ -216,16 +238,16 @@ export function canRead(req, doc) {
  * @param  {String} pName the parameter name identifying the object
  * @return {Function}     the middleware
  */
-export function canReadMw(pName) {
-  return function (req, res, next) {
+export function canReadMw(pName: string) {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (!canRead(req, req[req.params[pName]])) {
-      return res.send(403, 'you are not authorized to access this resource');
+      return res.status(403).send('you are not authorized to access this resource');
     }
     next();
   };
 }
 
-export function isOwner(req, doc) {
+export function isOwner(req: Request, doc: Document) {
   if (doc.createdBy === req.session.userid && !doc.owner) {
     return true;
   }
@@ -240,17 +262,17 @@ export function isOwner(req, doc) {
  * @param  {String}  pName the object's id to check
  * @return {Function}      the middleware
  */
-export function isOwnerMw(pName) {
-  return function (req, res, next) {
+export function isOwnerMw(pName: string) {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (!isOwner(req, req[req.params[pName]])) {
-      return res.send(403, 'you are not authorized to access this resource');
+      return res.status(403).send('you are not authorized to access this resource');
     }
     next();
   };
 }
 
-export function getSharedWith(sharedWith, name) {
-  var i;
+export function getSharedWith(sharedWith: Array<{ username: string; }>, name: string) {
+  let i;
   if (sharedWith.length === 0) {
     return -1;
   }
@@ -262,8 +284,8 @@ export function getSharedWith(sharedWith, name) {
   return -1;
 }
 
-export function getSharedGroup(sharedGroup, id) {
-  var i;
+export function getSharedGroup(sharedGroup: Array<{ _id?: ObjectId, groupname: string; }>, id: ObjectId) {
+  let i;
   if (sharedGroup.length === 0) {
     return -1;
   }

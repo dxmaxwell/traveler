@@ -55,7 +55,7 @@ const userSchema = new Schema({
   binders: [ObjectId],
   subscribe: {
     type: Boolean,
-    default: false
+    default: false,
   }
 });
 
@@ -64,7 +64,7 @@ const groupSchema = new Schema({
   name: String,
   forms: [ObjectId],
   travelers: [ObjectId],
-  binders: [ObjectId]
+  binders: [ObjectId],
 });
 
 export const User = mongoose.model<User>('User', userSchema);

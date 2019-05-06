@@ -4,6 +4,10 @@
 
 import * as mongoose from 'mongoose';
 
+import {
+  error,
+} from '../shared/logging';
+
 import * as share from './share.js';
 
 type ObjectId = mongoose.Types.ObjectId;
@@ -83,7 +87,7 @@ const workSchema = new Schema({
   refType: {
     type: String,
     required: true,
-    enum: ['traveler', 'binder']
+    enum: ['traveler', 'binder'],
   },
   addedOn: Date,
   addedBy: String,
@@ -91,34 +95,34 @@ const workSchema = new Schema({
   finished: {
     type: Number,
     default: 0,
-    min: 0
+    min: 0,
   },
   inProgress: {
     type: Number,
     default: 0,
-    min: 0
+    min: 0,
   },
   priority: {
     type: Number,
     min: 1,
     max: 10,
-    default: 5
+    default: 5,
   },
   sequence: {
     type: Number,
     min: 1,
-    default: 1
+    default: 1,
   },
   value: {
     type: Number,
     min: 0,
-    default: 10
+    default: 10,
   },
   color: {
     type: String,
     default: 'blue',
-    enum: ['green', 'yellow', 'red', 'blue', 'black']
-  }
+    enum: ['green', 'yellow', 'red', 'blue', 'black'],
+  },
 });
 
 /**
@@ -145,7 +149,7 @@ const binderSchema = new Schema({
   description: String,
   status: {
     type: Number,
-    default: 0
+    default: 0,
   },
   tags: [String],
   createdBy: String,
@@ -160,7 +164,7 @@ const binderSchema = new Schema({
   deadline: Date,
   publicAccess: {
     type: Number,
-    default: 0
+    default: 0,
   },
   sharedWith: [share.userSchema],
   sharedGroup: [share.groupSchema],
@@ -168,22 +172,22 @@ const binderSchema = new Schema({
   finishedValue: {
     type: Number,
     default: 0,
-    min: 0
+    min: 0,
   },
   inProgressValue: {
     type: Number,
     default: 0,
-    min: 0
+    min: 0,
   },
   totalValue: {
     type: Number,
     default: 0,
-    min: 0
+    min: 0,
   },
   archived: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
 binderSchema.methods.updateWorkProgress = function(this: Binder, spec: ISpec) {
@@ -221,12 +225,12 @@ binderSchema.methods.updateWorkProgress = function(this: Binder, spec: ISpec) {
 };
 
 
-binderSchema.methods.updateProgress = function (this: Binder, cb: (err: any, binder?: Binder) => void) {
-  var works = this.works;
-  var totalValue = 0;
-  var finishedValue = 0;
-  var inProgressValue = 0;
-  works.forEach(function (w) {
+binderSchema.methods.updateProgress = function(this: Binder, cb: (err: any, binder?: Binder) => void) {
+  const works = this.works;
+  let totalValue = 0;
+  let finishedValue = 0;
+  let inProgressValue = 0;
+  works.forEach((w) => {
     totalValue = totalValue + w.value;
     finishedValue = finishedValue + w.value * w.finished;
     inProgressValue = inProgressValue + w.value * w.inProgress;
@@ -236,12 +240,12 @@ binderSchema.methods.updateProgress = function (this: Binder, cb: (err: any, bin
   this.finishedValue = finishedValue;
   this.inProgressValue = inProgressValue;
   if (this.isModified()) {
-    this.save(function (err, newBinder) {
+    this.save((err, newBinder) => {
       if (cb) {
         cb(err, newBinder);
       } else {
         if (err) {
-          console.error(err);
+          error(err);
         }
       }
     });
