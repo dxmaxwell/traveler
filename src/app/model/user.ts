@@ -56,7 +56,7 @@ const userSchema = new Schema({
   subscribe: {
     type: Boolean,
     default: false,
-  }
+  },
 });
 
 const groupSchema = new Schema({

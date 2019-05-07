@@ -168,7 +168,7 @@ const travelerSchema = new Schema({
   archived: {
     type: Boolean,
     default: false,
-  }
+  },
 });
 
 

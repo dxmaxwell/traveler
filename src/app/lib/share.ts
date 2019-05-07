@@ -3,6 +3,10 @@
  */
 import * as express from 'express';
 
+import {
+  error,
+} from '../shared/logging';
+
 import * as ldapjs from './ldap-client';
 
 import {
@@ -44,17 +48,17 @@ export function setLDAPClient(client: ldapjs.Client) {
 }
 
 function addUserFromAD(req: Request, res: Response, doc) {
-  var name = req.body.name;
-  var nameFilter = ad.nameFilter.replace('_name', name);
-  var opts = {
+  const name = req.body.name;
+  const nameFilter = ad.nameFilter.replace('_name', name);
+  const opts = {
     filter: nameFilter,
     attributes: ad.objAttributes,
-    scope: 'sub'
+    scope: 'sub',
   };
 
-  ldapClient.legacySearch(ad.searchBase, opts, false, function (err, result) {
+  ldapClient.legacySearch(ad.searchBase, opts, false, (err, result) => {
     if (err) {
-      console.error(err.name + ' : ' + err.message);
+      error(err.name + ' : ' + err.message);
       return res.status(500).json(err);
     }
 
@@ -66,28 +70,28 @@ function addUserFromAD(req: Request, res: Response, doc) {
       return res.status(400).json(name + ' is not unique!');
     }
 
-    var id = result[0].sAMAccountName.toLowerCase();
-    var access = 0;
+    const id = result[0].sAMAccountName.toLowerCase();
+    let access = 0;
     if (req.body.access && req.body.access === 'write') {
       access = 1;
     }
     doc.sharedWith.addToSet({
       _id: id,
       username: name,
-      access: access
+      access: access,
     });
-    doc.save(function (docErr) {
+    doc.save((docErr) => {
       if (docErr) {
-        console.error(docErr);
+        error(docErr);
         return res.status(500).json(docErr.message);
       }
-      var user = new User({
+      const user = new User({
         _id: result[0].sAMAccountName.toLowerCase(),
         name: result[0].displayName,
         email: result[0].mail,
         office: result[0].physicalDeliveryOfficeName,
         phone: result[0].telephoneNumber,
-        mobile: result[0].mobile
+        mobile: result[0].mobile,
       });
       switch (doc.constructor.modelName) {
       case 'Form':
@@ -100,11 +104,11 @@ function addUserFromAD(req: Request, res: Response, doc) {
         user.binders = [doc._id];
         break;
       default:
-        console.error('Something is wrong with doc type ' + doc.constructor.modelName);
+        error('Something is wrong with doc type ' + doc.constructor.modelName);
       }
-      user.save(function (userErr) {
+      user.save((userErr) => {
         if (userErr) {
-          console.error(userErr);
+          error(userErr);
         }
       });
       return res.status(201).json('The user named ' + name + ' was added to the share list.');
@@ -113,17 +117,17 @@ function addUserFromAD(req: Request, res: Response, doc) {
 }
 
 function addGroupFromAD(req: Request, res: Response, doc) {
-  var id = req.body.id.toLowerCase();
-  var filter = ad.groupSearchFilter.replace('_id', id);
-  var opts = {
+  const id = req.body.id.toLowerCase();
+  const filter = ad.groupSearchFilter.replace('_id', id);
+  const opts = {
     filter: filter,
     attributes: ad.groupAttributes,
-    scope: 'sub'
+    scope: 'sub',
   };
 
-  ldapClient.legacySearch(ad.groupSearchBase, opts, false, function (err, result) {
+  ldapClient.legacySearch(ad.groupSearchBase, opts, false, (err, result) => {
     if (err) {
-      console.error(err);
+      error(err);
       return res.status(500).json(err.message);
     }
 
@@ -135,25 +139,25 @@ function addGroupFromAD(req: Request, res: Response, doc) {
       return res.status(400).json(id + ' is not unique!');
     }
 
-    var name = result[0].displayName;
-    var access = 0;
+    const name = result[0].displayName;
+    let access = 0;
     if (req.body.access && req.body.access === 'write') {
       access = 1;
     }
     doc.sharedGroup.addToSet({
       _id: id,
       groupname: name,
-      access: access
+      access: access,
     });
-    doc.save(function (docErr) {
+    doc.save((docErr) => {
       if (docErr) {
-        console.error(docErr);
+        error(docErr);
         return res.status(500).json(docErr.message);
       }
-      var group = new Group({
+      const group = new Group({
         _id: result[0].sAMAccountName.toLowerCase(),
         name: result[0].displayName,
-        email: result[0].mail
+        email: result[0].mail,
       });
       switch (doc.constructor.modelName) {
       case 'Form':
@@ -166,11 +170,11 @@ function addGroupFromAD(req: Request, res: Response, doc) {
         group.binders = [doc._id];
         break;
       default:
-        console.error('Something is wrong with doc type ' + doc.constructor.modelName);
+        error('Something is wrong with doc type ' + doc.constructor.modelName);
       }
-      group.save(function (groupErr) {
+      group.save((groupErr) => {
         if (groupErr) {
-          console.error(groupErr);
+          error(groupErr);
         }
       });
       return res.status(201).json('The group ' + id + ' was added to the share list.');
@@ -179,33 +183,33 @@ function addGroupFromAD(req: Request, res: Response, doc) {
 }
 
 function addUser(req: Request, res: Response, doc) {
-  var name = req.body.name;
+  const name = req.body.name;
   // check local db first then try ad
   User.findOne({
-    name: name
-  }, function (err, user) {
+    name: name,
+  }, (err, user) => {
     if (err) {
-      console.error(err);
+      error(err);
       return res.status(500).json(err.message);
     }
     if (user) {
-      var access = 0;
+      let access = 0;
       if (req.body.access && req.body.access === 'write') {
         access = 1;
       }
       doc.sharedWith.addToSet({
         _id: user._id,
         username: name,
-        access: access
+        access: access,
       });
-      doc.save(function (docErr) {
+      doc.save((docErr) => {
         if (docErr) {
-          console.error(docErr);
+          error(docErr);
           return res.status(500).json(docErr.message);
         }
         return res.status(201).json('The user named ' + name + ' was added to the share list.');
       });
-      var addToSet: AddToSet = {};
+      const addToSet: AddToSet = {};
       switch (doc.constructor.modelName) {
       case 'Form':
         addToSet.forms = doc._id;
@@ -217,13 +221,13 @@ function addUser(req: Request, res: Response, doc) {
         addToSet.binders = doc._id;
         break;
       default:
-        console.error('Something is wrong with doc type ' + doc.constructor.modelName);
+        error('Something is wrong with doc type ' + doc.constructor.modelName);
       }
       user.update({
-        $addToSet: addToSet
-      }, function (useErr) {
+        $addToSet: addToSet,
+      }, (useErr) => {
         if (useErr) {
-          console.error(useErr);
+          error(useErr);
         }
       });
     } else {
@@ -233,33 +237,33 @@ function addUser(req: Request, res: Response, doc) {
 }
 
 function addGroup(req: Request, res: Response, doc) {
-  var id = req.body.id.toLowerCase();
+  const id = req.body.id.toLowerCase();
   // check local db first then try ad
   Group.findOne({
-    _id: id
-  }, function (err, group) {
+    _id: id,
+  }, (err, group) => {
     if (err) {
-      console.error(err);
+      error(err);
       return res.status(500).json(err.message);
     }
     if (group) {
-      var access = 0;
+      let access = 0;
       if (req.body.access && req.body.access === 'write') {
         access = 1;
       }
       doc.sharedGroup.addToSet({
         _id: id,
         groupname: group.name,
-        access: access
+        access: access,
       });
-      doc.save(function (docErr) {
+      doc.save((docErr) => {
         if (docErr) {
-          console.error(docErr);
+          error(docErr);
           return res.status(500).json(docErr.message);
         }
         return res.status(201).json('The group ' + id + ' was added to the share list.');
       });
-      var addToSet: AddToSet = {};
+      const addToSet: AddToSet = {};
       switch (doc.constructor.modelName) {
       case 'Form':
         addToSet.forms = doc._id;
@@ -271,13 +275,13 @@ function addGroup(req: Request, res: Response, doc) {
         addToSet.binders = doc._id;
         break;
       default:
-        console.error('Something is wrong with doc type ' + doc.constructor.modelName);
+        error('Something is wrong with doc type ' + doc.constructor.modelName);
       }
       group.update({
-        $addToSet: addToSet
-      }, function (groupErr) {
+        $addToSet: addToSet,
+      }, (groupErr) => {
         if (groupErr) {
-          console.error(groupErr);
+          error(groupErr);
         }
       });
     } else {
@@ -288,9 +292,9 @@ function addGroup(req: Request, res: Response, doc) {
 
 function removeFromList(req: Request, res: Response, doc) {
   // var form = req[req.params.id];
-  var list;
-  var ids = req.params.shareid.split(',');
-  var removed = [];
+  let list;
+  const ids = req.params.shareid.split(',');
+  const removed = [];
 
   if (req.params.list === 'users') {
     list = doc.sharedWith;
@@ -299,8 +303,8 @@ function removeFromList(req: Request, res: Response, doc) {
     list = doc.sharedGroup;
   }
 
-  ids.forEach(function (id) {
-    var share = list.id(id);
+  ids.forEach((id) => {
+    const share = list.id(id);
     if (share) {
       removed.push(id);
       share.remove();
@@ -311,13 +315,13 @@ function removeFromList(req: Request, res: Response, doc) {
     return res.status(400).json('cannot find ' + req.params.shareid + ' in list.');
   }
 
-  doc.save(function (saveErr) {
+  doc.save((saveErr) => {
     if (saveErr) {
-      console.error(saveErr);
+      error(saveErr);
       return res.status(500).json(saveErr.message);
     }
     // keep the consistency of user's form list
-    var Target;
+    let Target;
     if (req.params.list === 'users') {
       Target = User;
     }
@@ -325,7 +329,7 @@ function removeFromList(req: Request, res: Response, doc) {
       Target = Group;
     }
 
-    var pull: AddToSet = {};
+    const pull: AddToSet = {};
     switch (doc.constructor.modelName) {
     case 'Form':
       pull.forms = doc._id;
@@ -337,18 +341,18 @@ function removeFromList(req: Request, res: Response, doc) {
       pull.binders = doc._id;
       break;
     default:
-      console.error('Something is wrong with doc type ' + doc.constructor.modelName);
+      error('Something is wrong with doc type ' + doc.constructor.modelName);
     }
 
-    removed.forEach(function (id) {
+    removed.forEach((id) => {
       Target.findByIdAndUpdate(id, {
-        $pull: pull
-      }, function (updateErr, target) {
+        $pull: pull,
+      }, (updateErr, target) => {
         if (updateErr) {
-          console.error(updateErr);
+          error(updateErr);
         }
         if (!target) {
-          console.error('The ' + req.params.list + ' ' + id + ' is not in the db');
+          error('The ' + req.params.list + ' ' + id + ' is not in the db');
         }
       });
     });
@@ -395,17 +399,17 @@ export function removeShare(req, res, doc) {
 
 export function changeOwner(req, res, doc) {
   // get user id from name here
-  var name = req.body.name;
-  var nameFilter = ad.nameFilter.replace('_name', name);
-  var opts = {
+  const name = req.body.name;
+  const nameFilter = ad.nameFilter.replace('_name', name);
+  const opts = {
     filter: nameFilter,
     attributes: ad.objAttributes,
-    scope: 'sub'
+    scope: 'sub',
   };
 
-  ldapClient.legacySearch(ad.searchBase, opts, false, function (ldapErr, result) {
+  ldapClient.legacySearch(ad.searchBase, opts, false, (ldapErr, result) => {
     if (ldapErr) {
-      console.error(ldapErr.name + ' : ' + ldapErr.message);
+      error(ldapErr.name + ' : ' + ldapErr.message);
       return res.status(500).json(ldapErr.message);
     }
 
@@ -417,7 +421,7 @@ export function changeOwner(req, res, doc) {
       return res.status(400).json(name + ' is not unique!');
     }
 
-    var id = result[0].sAMAccountName.toLowerCase();
+    const id = result[0].sAMAccountName.toLowerCase();
 
     if (doc.owner === id) {
       return res.send(204);
@@ -426,9 +430,9 @@ export function changeOwner(req, res, doc) {
     doc.owner = id;
     doc.transferredOn = Date.now();
 
-    doc.save(function (saveErr) {
+    doc.save((saveErr) => {
       if (saveErr) {
-        console.error(saveErr);
+        error(saveErr);
         return res.status(500).json(saveErr.message);
       }
       return res.status(200).json('Owner is changed to ' + id);
