@@ -163,8 +163,8 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
           }
 
           // set username and memberof in session
-          req.session.username = result[0].displayName;
-          req.session.memberOf = filterGroup(result[0].memberOf);
+          req.session.username = result1[0].displayName;
+          req.session.memberOf = filterGroup(result1[0].memberOf);
 
           // load others from db
           User.findOne({
@@ -188,11 +188,11 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
               req.session.roles = [];
               const first = new User({
                 _id: userid,
-                name: result[0].displayName,
-                email: result[0].mail,
-                office: result[0].physicalDeliveryOfficeName,
-                phone: result[0].telephoneNumber,
-                mobile: result[0].mobile,
+                name: result1[0].displayName,
+                email: result1[0].mail,
+                office: result1[0].physicalDeliveryOfficeName,
+                phone: result1[0].telephoneNumber,
+                mobile: result1[0].mobile,
                 roles: [],
                 lastVisitedOn: Date.now(),
               });
