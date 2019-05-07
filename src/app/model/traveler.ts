@@ -4,7 +4,7 @@
 
 import * as mongoose from 'mongoose';
 
-import * as share from './share.js';
+import * as share from './share';
 
 type ObjectId = mongoose.Types.ObjectId;
 
@@ -55,7 +55,8 @@ export interface ITraveler {
 }
 
 export interface Traveler extends ITraveler, mongoose.Document {
-  // nothing extra right now
+  sharedWith?: mongoose.Types.DocumentArray<share.User>;
+  sharedGroup?: mongoose.Types.DocumentArray<share.Group>;
 }
 
 export interface ITravelerData {

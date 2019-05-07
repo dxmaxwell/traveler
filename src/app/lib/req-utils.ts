@@ -9,9 +9,9 @@ import * as _ from 'underscore';
 
 import {
   error,
-  info,
-  warn,
 } from '../shared/logging';
+
+import * as share from '../model/share';
 
 type Request = express.Request;
 type Response = express.Response;
@@ -173,8 +173,8 @@ interface Document {
   publicAccess?: number;
   createdBy?: string;
   owner?: string;
-  sharedWith?: mongoose.Types.DocumentArray<any>;
-  sharedGroup?: mongoose.Types.DocumentArray<any>;
+  sharedWith?: mongoose.Types.DocumentArray<share.User>;
+  sharedGroup?: mongoose.Types.DocumentArray<share.Group>;
 }
 
 export function getAccess(req: Request, doc: Document) {
