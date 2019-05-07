@@ -7,7 +7,13 @@ module.exports = function(grunt) {
         stderr: false
       },
       puglint: {
-        command: './node_modules/.bin/pug-lint ./views/*.pug  ./views/docs/*.pug',
+        command: 'pug-lint ./views/*.pug  ./views/docs/*.pug ./views/web/input/*.pug ./views/web/builder/*.pug',
+      },
+      inputcompile: {
+        command: 'node ./views/web/compile.js input ./views/web/input ./public/builder/input.js',
+      },
+      buildercompile: {
+        command: 'node ./views/web/compile.js spec ./views/web/builder ./public/builder/spec.js',
       },
     },
     ts: {
@@ -51,6 +57,7 @@ module.exports = function(grunt) {
     clean: {
       app: [ './app' ],
       test: [ './test' ],
+      public: [ './public/builder' ],
     },
   });
 
@@ -111,6 +118,8 @@ module.exports = function(grunt) {
   grunt.registerTask('build', [
     'save_version_file',
     'ts:app',
+    'shell:inputcompile',
+    'shell:buildercompile',
   ]);
 
   grunt.registerTask('build-tests', [
