@@ -2,6 +2,7 @@
  * Utilities for managing shared forms, travelers and binders
  */
 import * as express from 'express';
+import * as mongoose from 'mongoose';
 
 import {
   error,
@@ -13,6 +14,11 @@ import {
   Group,
   User,
 } from '../model/user';
+
+import {
+  Group as ShareGroup,
+  User as ShareUser,
+} from '../model/share';
 
 interface AddToSet {
   forms?: unknown;
@@ -31,6 +37,13 @@ interface ADConfig {
   groupAttributes: string[];
 }
 
+interface SharedDocument extends mongoose.Document {
+  owner?: string;
+  transferredOn?: Date;
+  sharedWith: mongoose.Types.DocumentArray<ShareUser>;
+  sharedGroup: mongoose.Types.DocumentArray<ShareGroup>;
+}
+
 type Request = express.Request;
 type Response = express.Response;
 
@@ -47,7 +60,7 @@ export function setLDAPClient(client: ldapjs.Client) {
   ldapClient = client;
 }
 
-function addUserFromAD(req: Request, res: Response, doc) {
+function addUserFromAD(req: Request, res: Response, doc: SharedDocument) {
   const name = req.body.name;
   const nameFilter = ad.nameFilter.replace('_name', name);
   const opts = {
@@ -62,7 +75,7 @@ function addUserFromAD(req: Request, res: Response, doc) {
       return res.status(500).json(err);
     }
 
-    if (result.length === 0) {
+    if (!result || result.length === 0) {
       return res.status(400).json(name + ' is not found in AD!');
     }
 
@@ -70,7 +83,7 @@ function addUserFromAD(req: Request, res: Response, doc) {
       return res.status(400).json(name + ' is not unique!');
     }
 
-    const id = result[0].sAMAccountName.toLowerCase();
+    const id = String(result[0].sAMAccountName).toLowerCase();
     let access = 0;
     if (req.body.access && req.body.access === 'write') {
       access = 1;
@@ -86,14 +99,14 @@ function addUserFromAD(req: Request, res: Response, doc) {
         return res.status(500).json(docErr.message);
       }
       const user = new User({
-        _id: result[0].sAMAccountName.toLowerCase(),
+        _id: String(result[0].sAMAccountName).toLowerCase(),
         name: result[0].displayName,
         email: result[0].mail,
         office: result[0].physicalDeliveryOfficeName,
         phone: result[0].telephoneNumber,
         mobile: result[0].mobile,
       });
-      switch (doc.constructor.modelName) {
+      switch (doc.modelName) {
       case 'Form':
         user.forms = [doc._id];
         break;
@@ -104,7 +117,7 @@ function addUserFromAD(req: Request, res: Response, doc) {
         user.binders = [doc._id];
         break;
       default:
-        error('Something is wrong with doc type ' + doc.constructor.modelName);
+        error('Something is wrong with doc type ' + doc.modelName);
       }
       user.save((userErr) => {
         if (userErr) {
@@ -116,7 +129,7 @@ function addUserFromAD(req: Request, res: Response, doc) {
   });
 }
 
-function addGroupFromAD(req: Request, res: Response, doc) {
+function addGroupFromAD(req: Request, res: Response, doc: SharedDocument) {
   const id = req.body.id.toLowerCase();
   const filter = ad.groupSearchFilter.replace('_id', id);
   const opts = {
@@ -131,7 +144,7 @@ function addGroupFromAD(req: Request, res: Response, doc) {
       return res.status(500).json(err.message);
     }
 
-    if (result.length === 0) {
+    if (!result || result.length === 0) {
       return res.status(400).json(id + ' is not found in AD!');
     }
 
@@ -155,11 +168,11 @@ function addGroupFromAD(req: Request, res: Response, doc) {
         return res.status(500).json(docErr.message);
       }
       const group = new Group({
-        _id: result[0].sAMAccountName.toLowerCase(),
+        _id: String(result[0].sAMAccountName).toLowerCase(),
         name: result[0].displayName,
         email: result[0].mail,
       });
-      switch (doc.constructor.modelName) {
+      switch (doc.modelName) {
       case 'Form':
         group.forms = [doc._id];
         break;
@@ -170,7 +183,7 @@ function addGroupFromAD(req: Request, res: Response, doc) {
         group.binders = [doc._id];
         break;
       default:
-        error('Something is wrong with doc type ' + doc.constructor.modelName);
+        error('Something is wrong with doc type ' + doc.modelName);
       }
       group.save((groupErr) => {
         if (groupErr) {
@@ -182,7 +195,7 @@ function addGroupFromAD(req: Request, res: Response, doc) {
   });
 }
 
-function addUser(req: Request, res: Response, doc) {
+function addUser(req: Request, res: Response, doc: SharedDocument) {
   const name = req.body.name;
   // check local db first then try ad
   User.findOne({
@@ -210,7 +223,7 @@ function addUser(req: Request, res: Response, doc) {
         return res.status(201).json('The user named ' + name + ' was added to the share list.');
       });
       const addToSet: AddToSet = {};
-      switch (doc.constructor.modelName) {
+      switch (doc.modelName) {
       case 'Form':
         addToSet.forms = doc._id;
         break;
@@ -221,7 +234,7 @@ function addUser(req: Request, res: Response, doc) {
         addToSet.binders = doc._id;
         break;
       default:
-        error('Something is wrong with doc type ' + doc.constructor.modelName);
+        error('Something is wrong with doc type ' + doc.modelName);
       }
       user.update({
         $addToSet: addToSet,
@@ -236,7 +249,7 @@ function addUser(req: Request, res: Response, doc) {
   });
 }
 
-function addGroup(req: Request, res: Response, doc) {
+function addGroup(req: Request, res: Response, doc: SharedDocument) {
   const id = req.body.id.toLowerCase();
   // check local db first then try ad
   Group.findOne({
@@ -264,7 +277,7 @@ function addGroup(req: Request, res: Response, doc) {
         return res.status(201).json('The group ' + id + ' was added to the share list.');
       });
       const addToSet: AddToSet = {};
-      switch (doc.constructor.modelName) {
+      switch (doc.modelName) {
       case 'Form':
         addToSet.forms = doc._id;
         break;
@@ -275,7 +288,7 @@ function addGroup(req: Request, res: Response, doc) {
         addToSet.binders = doc._id;
         break;
       default:
-        error('Something is wrong with doc type ' + doc.constructor.modelName);
+        error('Something is wrong with doc type ' + doc.modelName);
       }
       group.update({
         $addToSet: addToSet,
@@ -290,11 +303,11 @@ function addGroup(req: Request, res: Response, doc) {
   });
 }
 
-function removeFromList(req: Request, res: Response, doc) {
+function removeFromList(req: Request, res: Response, doc: SharedDocument) {
   // var form = req[req.params.id];
-  let list;
-  const ids = req.params.shareid.split(',');
-  const removed = [];
+  let list: mongoose.Types.DocumentArray<ShareUser | ShareGroup>;
+  const ids: string[] = req.params.shareid.split(',');
+  const removed: string[] = [];
 
   if (req.params.list === 'users') {
     list = doc.sharedWith;
@@ -321,7 +334,7 @@ function removeFromList(req: Request, res: Response, doc) {
       return res.status(500).json(saveErr.message);
     }
     // keep the consistency of user's form list
-    let Target;
+    let Target: mongoose.Model<User | Group>;
     if (req.params.list === 'users') {
       Target = User;
     }
@@ -330,7 +343,7 @@ function removeFromList(req: Request, res: Response, doc) {
     }
 
     const pull: AddToSet = {};
-    switch (doc.constructor.modelName) {
+    switch (doc.modelName) {
     case 'Form':
       pull.forms = doc._id;
       break;
@@ -341,7 +354,7 @@ function removeFromList(req: Request, res: Response, doc) {
       pull.binders = doc._id;
       break;
     default:
-      error('Something is wrong with doc type ' + doc.constructor.modelName);
+      error('Something is wrong with doc type ' + doc.modelName);
     }
 
     removed.forEach((id) => {
@@ -368,9 +381,9 @@ function removeFromList(req: Request, res: Response, doc) {
  * @param  {Documment}   doc the document to share
  * @return {undefined}
  */
-export function addShare(req: Request, res: Response, doc) {
-  if (['Form', 'Traveler', 'Binder'].indexOf(doc.constructor.modelName) === -1) {
-    return res.status(500).json('cannot handle the document type ' + doc.constructor.modelName);
+export function addShare(req: Request, res: Response, doc: SharedDocument) {
+  if (['Form', 'Traveler', 'Binder'].indexOf(doc.modelName) === -1) {
+    return res.status(500).json('cannot handle the document type ' + doc.modelName);
   }
   if (req.params.list === 'users') {
     addUser(req, res, doc);
@@ -388,16 +401,16 @@ export function addShare(req: Request, res: Response, doc) {
  * @param  {Documment} doc the document to share
  * @return {undefined}
  */
-export function removeShare(req, res, doc) {
-  if (['Form', 'Traveler', 'Binder'].indexOf(doc.constructor.modelName) === -1) {
-    return res.status(500).json('cannot handle the document type ' + doc.constructor.modelName);
+export function removeShare(req: Request, res: Response, doc: SharedDocument) {
+  if (['Form', 'Traveler', 'Binder'].indexOf(doc.modelName) === -1) {
+    return res.status(500).json('cannot handle the document type ' + doc.modelName);
   }
 
   removeFromList(req, res, doc);
 }
 
 
-export function changeOwner(req, res, doc) {
+export function changeOwner(req: Request, res: Response, doc: SharedDocument) {
   // get user id from name here
   const name = req.body.name;
   const nameFilter = ad.nameFilter.replace('_name', name);
@@ -413,7 +426,7 @@ export function changeOwner(req, res, doc) {
       return res.status(500).json(ldapErr.message);
     }
 
-    if (result.length === 0) {
+    if (!result || result.length === 0) {
       return res.status(400).json(name + ' is not found in AD!');
     }
 
@@ -421,14 +434,14 @@ export function changeOwner(req, res, doc) {
       return res.status(400).json(name + ' is not unique!');
     }
 
-    const id = result[0].sAMAccountName.toLowerCase();
+    const id = String(result[0].sAMAccountName).toLowerCase();
 
     if (doc.owner === id) {
       return res.send(204);
     }
 
     doc.owner = id;
-    doc.transferredOn = Date.now();
+    doc.transferredOn = new Date();
 
     doc.save((saveErr) => {
       if (saveErr) {

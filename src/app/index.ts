@@ -18,10 +18,11 @@ import * as session from 'express-session';
 import * as methodOverride from 'method-override';
 import * as mongoose from 'mongoose';
 import * as morgan from 'morgan';
-import * as multer from 'multer';
 import * as favicon from 'serve-favicon';
 
-import auth = require('./lib/auth');
+import * as auth from './lib/auth';
+import Uploader from './lib/uploader';
+
 // import * as auth from './shared/auth';
 import * as handlers from './shared/handlers';
 import * as logging from './shared/logging';
@@ -467,6 +468,17 @@ async function doStart(): Promise<express.Application> {
     next();
   });
 
+  // Configure file uploader
+  const uploader = Uploader({
+    dest: String(cfg.uploads.root),
+    limits: {
+      files: 1,
+      fileSize: Number(cfg.uploads.maxSize) * 1024 * 1024,
+    },
+  });
+  form.setUploader(uploader);
+  traveler.setUploader(uploader);
+
   // Session configuration
   app.use(session({
     store: new session.MemoryStore(),
@@ -512,30 +524,6 @@ async function doStart(): Promise<express.Application> {
 
   // PUT and DELETE method support for old browsers
   app.use(methodOverride());
-
-  // Handle multipart file uploads
-  app.use(multer({
-    dest: String(cfg.uploads.root),
-    limits: {
-      files: 1,
-      fileSize: Number(cfg.uploads.maxSize) * 1024 * 1024,
-    },
-  }).any());
-  // Adapt new version of Multer to old behavior where req.files is an Object!
-  app.use((req, res, next) => {
-    if (Array.isArray(req.files)) {
-      const obj = {};
-      for (const file of req.files) {
-        if (obj[file.fieldname]) {
-          warn('Request contains two or more files with the same fieldname: %s', file.fieldname);
-          continue;
-        }
-        obj[file.fieldname] = file;
-      }
-      req.files = obj;
-    }
-    next();
-  });
   //////////////////////////////////////////
 
   // body-parser configuration

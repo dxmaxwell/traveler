@@ -5,11 +5,13 @@
 import * as fs from 'fs';
 
 import * as express from 'express';
+import * as mongoose from 'mongoose';
 
 import * as auth from '../lib/auth';
 
 import * as cheer from 'cheerio';
-import * as underscore from 'underscore';
+
+import * as handlers from '../shared/handlers';
 
 import {
   error,
@@ -18,6 +20,7 @@ import {
 
 import * as reqUtils from '../lib/req-utils';
 import * as shareLib from '../lib/share';
+import * as Uploader from '../lib/uploader';
 
 import {
   Form,
@@ -27,6 +30,11 @@ import {
   Group,
   User,
 } from '../model/user';
+
+import {
+  Group as ShareGroup,
+  User as ShareUser,
+} from '../model/share';
 
 import {
   Traveler,
@@ -47,9 +55,18 @@ export function setServiceUrl(url: string) {
   serviceUrl = url;
 }
 
+let uploader: Uploader.Instance;
+
+export function setUploader(u: Uploader.Instance) {
+  uploader = u;
+}
+
 function createTraveler(form: Form, req: Request, res: Response) {
+  if (!req.session) {
+    return;
+  }
   // update the total input number and finished input number
-  const $ = cheer.load(form.html);
+  const $ = cheer.load(form.html || '');
   const num = $('input, textarea').length;
   const traveler = new Traveler({
     title: form.title,
@@ -90,6 +107,10 @@ function createTraveler(form: Form, req: Request, res: Response) {
 }
 
 function cloneTraveler(source: Traveler, req: Request, res: Response) {
+  if (!req.session) {
+    res.status(500).send('Session not found');
+    return;
+  }
   const traveler = new Traveler({
     title: source.title + ' clone',
     description: source.description,
@@ -161,6 +182,9 @@ export function init(app: express.Application) {
   });
 
   app.get('/travelers/json', auth.ensureAuthenticated, (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
     Traveler.find({
       createdBy: req.session.userid,
       archived: {
@@ -180,6 +204,9 @@ export function init(app: express.Application) {
   });
 
   app.get('/transferredtravelers/json', auth.ensureAuthenticated, (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
     Traveler.find({
       owner: req.session.userid,
       archived: {
@@ -195,6 +222,9 @@ export function init(app: express.Application) {
   });
 
   app.get('/sharedtravelers/json', auth.ensureAuthenticated, (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
     User.findOne({
       _id: req.session.userid,
     }, 'travelers').exec((err, me) => {
@@ -223,6 +253,9 @@ export function init(app: express.Application) {
   });
 
   app.get('/groupsharedtravelers/json', auth.ensureAuthenticated, (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
     Group.find({
       _id: {
         $in: req.session.memberOf,
@@ -323,6 +356,9 @@ export function init(app: express.Application) {
     });*/
 
   app.get('/archivedtravelers/json', auth.ensureAuthenticated, (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
     const search = {
       $and: [{
         $or: [{
@@ -383,7 +419,7 @@ export function init(app: express.Application) {
   });
 
   app.get('/travelers/:id', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), (req, res) => {
-    const doc = req[req.params.id];
+    const doc: Traveler = (req as any)[req.params.id];
     if (doc.archived) {
       return res.redirect(serviceUrl + '/travelers/' + req.params.id + '/view');
     }
@@ -392,7 +428,7 @@ export function init(app: express.Application) {
       return res.render('traveler', {
         isOwner: reqUtils.isOwner(req, doc),
         traveler: doc,
-        formHTML: doc.forms.length === 1 ? doc.forms[0].html : doc.forms.id(doc.activeForm).html,
+        formHTML: doc.forms.length === 1 ? doc.forms[0].html : doc.forms.id(doc.activeForm as any).html,
       });
     }
 
@@ -405,16 +441,16 @@ export function init(app: express.Application) {
 
   app.get('/travelers/:id/view', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), (req, res) => {
     return res.render('traveler-viewer', {
-      traveler: req[req.params.id],
+      traveler: (req as any)[req.params.id],
     });
   });
 
   app.get('/travelers/:id/json', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canReadMw('id'), (req, res) => {
-    return res.status(200).json(req[req.params.id]);
+    return res.status(200).json((req as any)[req.params.id]);
   });
 
   app.put('/travelers/:id/archived', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['archived']), (req, res) => {
-    const doc = req[req.params.id];
+    const doc: Traveler = (req as any)[req.params.id];
     if (doc.archived === req.body.archived) {
       return res.send(204);
     }
@@ -422,7 +458,7 @@ export function init(app: express.Application) {
     doc.archived = req.body.archived;
 
     if (doc.archived) {
-      doc.archivedOn = Date.now();
+      doc.archivedOn = new Date();
     }
 
     doc.save((saveErr, newDoc) => {
@@ -436,12 +472,12 @@ export function init(app: express.Application) {
   });
 
   app.put('/travelers/:id/owner', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.status('id', [0, 1, 1.5]), reqUtils.filter('body', ['name']), (req, res) => {
-    const doc = req[req.params.id];
+    const doc: Traveler = (req as any)[req.params.id];
     shareLib.changeOwner(req, res, doc);
   });
 
   app.get('/travelers/:id/config', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), (req, res) => {
-    const doc = req[req.params.id];
+    const doc: Traveler = (req as any)[req.params.id];
     return res.render('traveler-config', {
       traveler: doc,
       isOwner: reqUtils.isOwner(req, doc),
@@ -450,13 +486,13 @@ export function init(app: express.Application) {
 
   app.get('/travelers/:id/formmanager', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), (req, res) => {
     res.render('form-manager', {
-      traveler: req[req.params.id],
+      traveler: (req as any)[req.params.id],
     });
   });
 
   // use the form in the request as the active form
   app.post('/travelers/:id/forms', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['html', '_id', 'title']), reqUtils.hasAll('body', ['html', '_id', 'title']), reqUtils.sanitize('body', ['html', 'title']), (req, res) => {
-    const doc = req[req.params.id];
+    const doc: Traveler = (req as any)[req.params.id];
     if (doc.status > 1 || doc.archived) {
       return res.status(400).send('cannot update form because of current traveler state');
     }
@@ -483,7 +519,7 @@ export function init(app: express.Application) {
 
   // set active form
   app.put('/travelers/:id/forms/active', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), (req, res) => {
-    const doc = req[req.params.id];
+    const doc: Traveler = (req as any)[req.params.id];
     if (doc.status > 1 || doc.archived) {
       return res.status(400).send('cannot update form because of current traveler state');
     }
@@ -499,9 +535,9 @@ export function init(app: express.Application) {
     }
 
     doc.activeForm = form._id;
-    const $ = cheer.load(form.html);
+    const $ = cheer.load(form.html || '');
     const num = $('input, textarea').length;
-    form.activatedOn.push(Date.now());
+    form.activatedOn.push(new Date());
     doc.totalInput = num;
     doc.save(function saveDoc(e, newDoc) {
       if (e) {
@@ -514,7 +550,7 @@ export function init(app: express.Application) {
 
   // set form alias
   app.put('/travelers/:id/forms/:fid/alias', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['value']), reqUtils.sanitize('body', ['value']), function putFormAlias(req, res) {
-    const doc = req[req.params.id];
+    const doc: Traveler = (req as any)[req.params.id];
     if (doc.status > 1 || doc.archived) {
       return res.status(400).send('cannot update form because of current traveler state');
     }
@@ -535,15 +571,18 @@ export function init(app: express.Application) {
   });
 
   app.put('/travelers/:id/config', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['title', 'description', 'deadline']), reqUtils.sanitize('body', ['title', 'description', 'deadline']), (req, res) => {
-    const doc = req[req.params.id];
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
+    const doc: Traveler = (req as any)[req.params.id];
     let k;
     for (k in req.body) {
       if (req.body.hasOwnProperty(k) && req.body[k] !== null) {
-        doc[k] = req.body[k];
+        (doc as any)[k] = req.body[k];
       }
     }
     doc.updatedBy = req.session.userid;
-    doc.updatedOn = Date.now();
+    doc.updatedOn = new Date();
     doc.save((saveErr, newDoc) => {
       if (saveErr) {
         error(saveErr);
@@ -552,7 +591,7 @@ export function init(app: express.Application) {
       const out = {};
       for (k in req.body) {
         if (req.body.hasOwnProperty(k) && req.body[k] !== null) {
-          out[k] = newDoc.get(k);
+          (out as any)[k] = newDoc.get(k);
         }
       }
       return res.status(200).json(out);
@@ -560,7 +599,11 @@ export function init(app: express.Application) {
   });
 
   app.put('/travelers/:id/status', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canWriteMw('id'), reqUtils.archived('id', false), (req, res) => {
-    const doc = req[req.params.id];
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
+
+    const doc: Traveler = (req as any)[req.params.id];
 
     if ([1, 1.5, 2, 3].indexOf(req.body.status) === -1) {
       return res.status(400).send('invalid status');
@@ -607,7 +650,7 @@ export function init(app: express.Application) {
     }
 
     doc.updatedBy = req.session.userid;
-    doc.updatedOn = Date.now();
+    doc.updatedOn = new Date();
     doc.save((saveErr) => {
       if (saveErr) {
         error(saveErr);
@@ -619,13 +662,17 @@ export function init(app: express.Application) {
 
 
   app.post('/travelers/:id/devices', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['newdevice']), reqUtils.sanitize('body', ['newdevice']), (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
+
     const newdevice = req.body.newdevice;
     if (!newdevice) {
       return res.status(400).send('the new device name not accepted');
     }
-    const doc = req[req.params.id];
+    const doc: Traveler = (req as any)[req.params.id];
     doc.updatedBy = req.session.userid;
-    doc.updatedOn = Date.now();
+    doc.updatedOn = new Date();
     const added = doc.devices.addToSet(newdevice);
     if (added.length === 0) {
       return res.send(204);
@@ -642,9 +689,13 @@ export function init(app: express.Application) {
   });
 
   app.delete('/travelers/:id/devices/:number', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.status('id', [0, 1]), (req, res) => {
-    const doc = req[req.params.id];
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
+
+    const doc: Traveler = (req as any)[req.params.id];
     doc.updatedBy = req.session.userid;
-    doc.updatedOn = Date.now();
+    doc.updatedOn = new Date();
     doc.devices.pull(req.params.number);
     doc.save((saveErr) => {
       if (saveErr) {
@@ -656,7 +707,7 @@ export function init(app: express.Application) {
   });
 
   app.get('/travelers/:id/data', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canReadMw('id'), (req, res) => {
-    const doc = req[req.params.id];
+    const doc: Traveler = (req as any)[req.params.id];
     TravelerData.find({
       _id: {
         $in: doc.data,
@@ -671,7 +722,11 @@ export function init(app: express.Application) {
   });
 
   app.post('/travelers/:id/data', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.archived('id', false), reqUtils.canWriteMw('id'), reqUtils.status('id', [1]), reqUtils.filter('body', ['name', 'value', 'type']), reqUtils.hasAll('body', ['name', 'value', 'type']), reqUtils.sanitize('body', ['name', 'value', 'type']), (req, res) => {
-    const doc = req[req.params.id];
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
+
+    const doc: Traveler = (req as any)[req.params.id];
     const data = new TravelerData({
       traveler: doc._id,
       name: req.body.name,
@@ -685,13 +740,17 @@ export function init(app: express.Application) {
         error(dataErr);
         return res.status(500).send(dataErr.message);
       }
+      if (!req.session) {
+        res.status(500).send('Session not found');
+        return;
+      }
       doc.data.push(data._id);
       doc.manPower.addToSet({
         _id: req.session.userid,
         username: req.session.username,
       });
       doc.updatedBy = req.session.userid;
-      doc.updatedOn = Date.now();
+      doc.updatedOn = new Date();
       doc.save((saveErr) => {
         if (saveErr) {
           error(saveErr);
@@ -703,7 +762,7 @@ export function init(app: express.Application) {
   });
 
   app.get('/travelers/:id/notes', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canReadMw('id'), (req, res) => {
-    const doc = req[req.params.id];
+    const doc: Traveler = (req as any)[req.params.id];
     TravelerNote.find({
       _id: {
         $in: doc.notes,
@@ -718,7 +777,10 @@ export function init(app: express.Application) {
   });
 
   app.post('/travelers/:id/notes', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.archived('id', false), reqUtils.canWriteMw('id'), reqUtils.filter('body', ['name', 'value']), reqUtils.hasAll('body', ['name', 'value']), reqUtils.sanitize('body', ['name', 'value']), (req, res) => {
-    const doc = req[req.params.id];
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
+    const doc: Traveler = (req as any)[req.params.id];
     const note = new TravelerNote({
       traveler: doc._id,
       name: req.body.name,
@@ -731,13 +793,17 @@ export function init(app: express.Application) {
         error(noteErr);
         return res.status(500).send(noteErr.message);
       }
+      if (!req.session) {
+        res.status(500).send('Session not found');
+        return;
+      }
       doc.notes.push(note._id);
       doc.manPower.addToSet({
         _id: req.session.userid,
         username: req.session.username,
       });
       doc.updatedBy = req.session.userid;
-      doc.updatedOn = Date.now();
+      doc.updatedOn = new Date();
       doc.save((saveErr) => {
         if (saveErr) {
           error(saveErr);
@@ -749,7 +815,7 @@ export function init(app: express.Application) {
   });
 
   app.put('/travelers/:id/finishedinput', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canWriteMw('id'), reqUtils.status('id', [1, 1.5, 2]), reqUtils.filter('body', ['finishedInput']), (req, res) => {
-    const doc = req[req.params.id];
+    const doc: Traveler = (req as any)[req.params.id];
     doc.update({
       finishedInput: req.body.finishedInput,
     }, (saveErr) => {
@@ -761,21 +827,25 @@ export function init(app: express.Application) {
     });
   });
 
-  app.post('/travelers/:id/uploads', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.canWriteMw('id'), reqUtils.status('id', [1]), (req, res) => {
-    const doc = req[req.params.id];
+  app.post('/travelers/:id/uploads', auth.ensureAuthenticated, uploader.singleParam('body', 'name'), reqUtils.exist('id', Traveler), reqUtils.canWriteMw('id'), reqUtils.status('id', [1]), (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
 
-    if (underscore.isEmpty(req.files)) {
-      return res.status(400).send('Expecte One uploaded file');
+    const doc: Traveler = (req as any)[req.params.id];
+
+    if (!req.file) {
+      return res.status(400).send('Expected one uploaded file');
     }
 
     const data = new TravelerData({
       traveler: doc._id,
       name: req.body.name,
-      value: req.files[req.body.name].originalname,
+      value: req.file.originalname,
       file: {
-        path: req.files[req.body.name].path,
-        encoding: req.files[req.body.name].encoding,
-        mimetype: req.files[req.body.name].mimetype,
+        path: req.file.path,
+        encoding: req.file.encoding,
+        mimetype: req.file.mimetype,
       },
       inputType: req.body.type,
       inputBy: req.session.userid,
@@ -787,9 +857,13 @@ export function init(app: express.Application) {
         error(dataErr);
         return res.status(500).send(dataErr.message);
       }
+      if (!req.session) {
+        res.status(500).send('Session not found');
+        return;
+      }
       doc.data.push(data._id);
       doc.updatedBy = req.session.userid;
-      doc.updatedOn = Date.now();
+      doc.updatedOn = new Date();
       doc.save((saveErr) => {
         if (saveErr) {
           error(saveErr);
@@ -805,11 +879,12 @@ export function init(app: express.Application) {
   });
 
   app.get('/data/:id', auth.ensureAuthenticated, reqUtils.exist('id', TravelerData), (req, res) => {
-    const data = req[req.params.id];
-    if (data.inputType === 'file') {
-      fs.exists(data.file.path, (exists) => {
+    const data: TravelerData = (req as any)[req.params.id];
+    if (data.inputType === 'file' && data.file) {
+      const filePath = data.file.path;
+      fs.exists(filePath, (exists) => {
         if (exists) {
-          return res.sendfile(data.file.path);
+          return res.sendfile(filePath);
         }
         return res.status(410).send('gone');
       });
@@ -819,7 +894,7 @@ export function init(app: express.Application) {
   });
 
   app.get('/travelers/:id/share', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), (req, res) => {
-    const traveler = req[req.params.id];
+    const traveler: Traveler = (req as any)[req.params.id];
     return res.render('share', {
       type: 'Traveler',
       id: req.params.id,
@@ -829,7 +904,7 @@ export function init(app: express.Application) {
   });
 
   app.put('/travelers/:id/share/public', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), reqUtils.filter('body', ['access']), (req, res) => {
-    const traveler = req[req.params.id];
+    const traveler: Traveler = (req as any)[req.params.id];
     // change the access
     let access = req.body.access;
     if (['-1', '0', '1'].indexOf(access) === -1) {
@@ -850,7 +925,7 @@ export function init(app: express.Application) {
   });
 
   app.get('/travelers/:id/share/:list/json', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), (req, res) => {
-    const traveler = req[req.params.id];
+    const traveler: Traveler = (req as any)[req.params.id];
     if (req.params.list === 'users') {
       return res.status(200).json(traveler.sharedWith || []);
     }
@@ -861,7 +936,7 @@ export function init(app: express.Application) {
   });
 
   app.post('/travelers/:id/share/:list', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), (req, res) => {
-    const traveler = req[req.params.id];
+    const traveler: Traveler = (req as any)[req.params.id];
     let share = -2;
     if (req.params.list === 'users') {
       if (req.body.name) {
@@ -893,8 +968,8 @@ export function init(app: express.Application) {
   });
 
   app.put('/travelers/:id/share/:list/:shareid', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), (req, res) => {
-    const traveler = req[req.params.id];
-    let share;
+    const traveler: Traveler = (req as any)[req.params.id];
+    let share: ShareUser | ShareGroup | undefined;
     if (req.params.list === 'users') {
       share = traveler.sharedWith.id(req.params.shareid);
     }
@@ -916,31 +991,33 @@ export function init(app: express.Application) {
         return res.status(500).send(saveErr.message);
       }
       // check consistency of user's traveler list
-      let Target;
+      let Target: mongoose.Model<User | Group> | undefined;
       if (req.params.list === 'users') {
         Target = User;
       }
       if (req.params.list === 'groups') {
         Target = Group;
       }
-      Target.findByIdAndUpdate(req.params.shareid, {
-        $addToSet: {
-          travelers: traveler._id,
-        },
-      }, (updateErr, target) => {
-        if (updateErr) {
-          error(updateErr);
-        }
-        if (!target) {
-          error('The user/group ' + req.params.userid + ' is not in the db');
-        }
-      });
+      if (Target) {
+        Target.findByIdAndUpdate(req.params.shareid, {
+          $addToSet: {
+            travelers: traveler._id,
+          },
+        }, (updateErr, target) => {
+          if (updateErr) {
+            error(updateErr);
+          }
+          if (!target) {
+            error('The user/group ' + req.params.userid + ' is not in the db');
+          }
+        });
+      }
       return res.status(200).json(share);
     });
   });
 
   app.delete('/travelers/:id/share/:list/:shareid', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.archived('id', false), (req, res) => {
-    const traveler = req[req.params.id];
+    const traveler: Traveler = (req as any)[req.params.id];
     shareLib.removeShare(req, res, traveler);
   });
 

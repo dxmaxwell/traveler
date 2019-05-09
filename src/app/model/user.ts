@@ -15,9 +15,9 @@ export interface IUser {
   mobile?: string;
   roles?: string[];
   lastVisitedOn?: Date;
-  forms?: ObjectId[];
-  travelers?: ObjectId[];
-  binders?: ObjectId[];
+  forms: ObjectId[];
+  travelers: ObjectId[];
+  binders: ObjectId[];
   subscribe?: boolean;
 }
 
@@ -28,9 +28,9 @@ export interface User extends IUser, mongoose.Document {
 export interface IGroup {
   _id: any;
   name?: string;
-  forms?: ObjectId[];
-  travelers?: ObjectId[];
-  binders?: ObjectId[];
+  forms: ObjectId[];
+  travelers: ObjectId[];
+  binders: ObjectId[];
 }
 
 export interface Group extends IGroup, mongoose.Document {

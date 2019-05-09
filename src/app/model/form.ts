@@ -28,7 +28,8 @@ export interface IForm {
 }
 
 export interface Form extends IForm, mongoose.Document {
-  // nothing extra right now
+  sharedWith: mongoose.Types.DocumentArray<share.User>;
+  sharedGroup: mongoose.Types.DocumentArray<share.Group>;
 }
 
 export interface IFormFile {

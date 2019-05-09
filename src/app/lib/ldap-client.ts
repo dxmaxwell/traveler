@@ -14,23 +14,21 @@ export interface BindResult {
   // controls: ?[];       // What is the expected array type?
 }
 
-export interface SearchOptions {
+export interface SearchOptions extends ldap.SearchOptions {
+  scope?: 'base' | 'one' | 'sub'; // Refine definition from `string`
   raw?: boolean;
   base: string;
-  filter?: string;
-  attributes?: string[];
-  scope?: 'base' | 'one' | 'sub';
-  sizeLimit?: number;
-  timeLimit?: number;
-  paged?: boolean;
 }
 
-export interface SearchResult {
-  [key: string]: {} | undefined;
-}
+export type SearchEntryRaw = ldap.SearchEntryRaw;
+
+export type SearchEntryObject = ldap.SearchEntryObject;
+
+export type LegacySearchCallback = (err: any, entry?: Array<SearchEntryRaw | SearchEntryObject>) => void;
 
 export interface IClient {
-  search<T = SearchResult>(opts: SearchOptions): Promise<T[]>;
+  search<T extends SearchEntryObject = SearchEntryObject>(options: SearchOptions): Promise<T[]>;
+  search<T extends SearchEntryRaw = SearchEntryRaw>(options: SearchOptions & { raw: true }): Promise<T[]>;
   bind(dn: string, password: string, checked: true): Promise<boolean>;
   bind(dn: string, password: string, checked?: false): Promise<BindResult>;
   unbind(): Promise<void>;
@@ -142,21 +140,28 @@ export class Client implements IClient {
     });
   }
 
-  public search<T = SearchResult>(options: SearchOptions): Promise<T[]> {
-    return new Promise<T[]>((resolve, reject) => {
+  public search<T extends SearchEntryObject = SearchEntryObject>(options: SearchOptions): Promise<T[]>;
+  public search<T extends SearchEntryRaw = SearchEntryRaw>(options: SearchOptions & { raw: true }): Promise<T[]>;
+  public search(options: SearchOptions): Promise<Array<SearchEntryRaw | SearchEntryObject>> {
+    return new Promise<Array<SearchEntryRaw | SearchEntryObject>>((resolve, reject) => {
       const base = options.base;
       const raw = options.raw;
-      const opts = {
+      const opts: ldap.SearchOptions = {
+        derefAliases: options.derefAliases,
+        paged: options.paged,
+        sizeLimit: options.sizeLimit,
+        timeLimit: options.timeLimit,
+        typesOnly: options.typesOnly,
         filter: options.filter,
         attributes: options.attributes,
-        scope: 'sub',
+        scope: options.scope || 'sub',
       };
       this.client.search(base, opts, (err, stream) => {
         if (err) {
           reject(err);
           return;
         }
-        const items: T[] = [];
+        const items: Array<ldap.SearchEntryRaw | ldap.SearchEntryObject> = [];
         stream.on('searchEntry', (entry) => {
           if (raw) {
             items.push(entry.raw);
@@ -166,15 +171,13 @@ export class Client implements IClient {
         });
         stream.on('error', (rerr) => {
           reject(rerr);
-          return;
         });
         stream.on('end', (result) => {
-          if (result.status !== 0) {
-            reject(new Error(`LDAP search returns non-zero status: ${result.status}`));
+          if (!result || result.status !== 0) {
+            reject(new Error(`LDAP search returns non-zero status: ${result ? result.status : 'null'}`));
             return;
           }
           resolve(items);
-          return;
         });
       });
     });
@@ -247,13 +250,13 @@ export class Client implements IClient {
   }
 
   // Maintained to support legacy callback-based code! //
-  public legacySearch(base: string, opts: ldap.SearchOptions, raw: boolean, cb: (err: any, entry?: any[]) => void) {
+  public legacySearch(base: string, opts: ldap.SearchOptions, raw: boolean, cb: LegacySearchCallback) {
     this.client.search(base, opts, (err, result) => {
       if (err) {
         debug(JSON.stringify(err));
         return cb(err);
       }
-      const items = [];
+      const items: Array<ldap.SearchEntryRaw | ldap.SearchEntryObject> = [];
       result.on('searchEntry', (entry) => {
         if (raw) {
           items.push(entry.raw);
@@ -266,8 +269,8 @@ export class Client implements IClient {
         return cb(e);
       });
       result.on('end', (r) => {
-        if (r.status !== 0) {
-          const e = 'non-zero status from LDAP search: ' + result.status;
+        if (!r || r.status !== 0) {
+          const e = 'non-zero status from LDAP search: ' + (r ? r.status : 'null');
           debug(JSON.stringify(e));
           return cb(e);
         }

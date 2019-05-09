@@ -2,9 +2,10 @@
  * Utilities for handling requests
  */
 
+import sanitizeCaja = require('@mapbox/sanitize-caja');
+
 import * as express from 'express';
 import * as mongoose from 'mongoose';
-import * as sanitizeCaja from 'sanitize-caja';
 import * as _ from 'underscore';
 
 import {
@@ -27,7 +28,7 @@ type ObjectId = mongoose.Types.ObjectId;
  * @param  {[String]} names The property list to check against
  * @return {Function}       The middleware
  */
-export function filter(list, names) {
+export function filter(list: 'body' | 'params' | 'query', names: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     let k;
     let found = false;
@@ -49,7 +50,7 @@ export function filter(list, names) {
 }
 
 
-function sanitizeJson(input) {
+function sanitizeJson<T>(input: T): T {
   let jsonString = JSON.stringify(input);
   jsonString = sanitizeCaja(jsonString);
   let output = null;
@@ -67,7 +68,7 @@ function sanitizeJson(input) {
  * @param  {[String]} names The list to sanitize
  * @return {Function}       The middleware
  */
-export function sanitize(list, names) {
+export function sanitize(list: 'body' | 'params' | 'query', names: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     names.forEach((n) => {
       if (Object.prototype.hasOwnProperty.call(req[list], n)) {
@@ -90,7 +91,7 @@ export function sanitize(list, names) {
  * @param  {[String]}  names The property list to check
  * @return {Function}        The middleware
  */
-export function hasAll(list, names) {
+export function hasAll(list: 'body' | 'params' | 'query', names: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     let i;
     let miss = false;
@@ -113,7 +114,7 @@ export function hasAll(list, names) {
  * @param  {Model} collection     the collection model
  * @return {Function}             the middleware
  */
-export function exist(pName, collection) {
+export function exist<T extends mongoose.Document>(pName: string, collection: mongoose.Model<T>) {
   return (req: Request, res: Response, next: NextFunction) => {
     collection.findById(req.params[pName]).exec((err, item) => {
       if (err) {
@@ -125,7 +126,7 @@ export function exist(pName, collection) {
         return res.status(404).send('item ' + req.params[pName] + ' not found');
       }
 
-      req[req.params[pName]] = item;
+      (req as any)[req.params[pName]] = item;
       next();
     });
   };
@@ -137,9 +138,9 @@ export function exist(pName, collection) {
  * @param  {[Number]} sList the allowed status list
  * @return {Function}       the middleware
  */
-export function status(pName, sList) {
+export function status(pName: string, sList: number[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const s = req[req.params[pName]].status;
+    const s = (req as any)[req.params[pName]].status;
     if (sList.indexOf(s) === -1) {
       return res.status(400).send('request is not allowed for item ' + req.params[pName] + ' status ' + s);
     }
@@ -153,9 +154,9 @@ export function status(pName, sList) {
  * @param  {Boolean} a    true or false
  * @return {Function}     the middleware
  */
-export function archived(pName, a) {
+export function archived(pName: string, a: boolean) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const arch = req[req.params[pName]].archived;
+    const arch = (req as any)[req.params[pName]].archived;
     if (a !== arch) {
       return res.status(400).send('request is not allowed for item ' + req.params[pName] + ' archived ' + arch);
     }
@@ -181,17 +182,17 @@ export function getAccess(req: Request, doc: Document) {
   if (doc.publicAccess === 1) {
     return 1;
   }
-  if (doc.createdBy === req.session.userid && !doc.owner) {
+  if (req.session && doc.createdBy === req.session.userid && !doc.owner) {
     return 1;
   }
-  if (doc.owner === req.session.userid) {
+  if (req.session && doc.owner === req.session.userid) {
     return 1;
   }
-  if (doc.sharedWith && doc.sharedWith.id(req.session.userid)) {
+  if (req.session && doc.sharedWith && doc.sharedWith.id(req.session.userid)) {
     return doc.sharedWith.id(req.session.userid).access;
   }
   let i;
-  if (doc.sharedGroup) {
+  if (req.session && doc.sharedGroup) {
     for (i = 0; i < req.session.memberOf.length; i += 1) {
       if (doc.sharedGroup.id(req.session.memberOf[i]) && doc.sharedGroup.id(req.session.memberOf[i]).access === 1) {
         return 1;
@@ -221,7 +222,7 @@ export function canWrite(req: Request, doc: Document) {
  */
 export function canWriteMw(pName: string) {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!canWrite(req, req[req.params[pName]])) {
+    if (!canWrite(req, (req as any)[req.params[pName]])) {
       return res.status(403).send('you are not authorized to access this resource');
     }
     next();
@@ -240,7 +241,7 @@ export function canRead(req: Request, doc: Document) {
  */
 export function canReadMw(pName: string) {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!canRead(req, req[req.params[pName]])) {
+    if (!canRead(req, (req as any)[req.params[pName]])) {
       return res.status(403).send('you are not authorized to access this resource');
     }
     next();
@@ -248,10 +249,10 @@ export function canReadMw(pName: string) {
 }
 
 export function isOwner(req: Request, doc: Document) {
-  if (doc.createdBy === req.session.userid && !doc.owner) {
+  if (req.session && doc.createdBy === req.session.userid && !doc.owner) {
     return true;
   }
-  if (doc.owner === req.session.userid) {
+  if (req.session && doc.owner === req.session.userid) {
     return true;
   }
   return false;
@@ -264,7 +265,7 @@ export function isOwner(req: Request, doc: Document) {
  */
 export function isOwnerMw(pName: string) {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!isOwner(req, req[req.params[pName]])) {
+    if (!isOwner(req, (req as any)[req.params[pName]])) {
       return res.status(403).send('you are not authorized to access this resource');
     }
     next();

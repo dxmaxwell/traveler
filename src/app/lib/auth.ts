@@ -80,28 +80,31 @@ export function setAPIUsers(users: ApiUserConfig) {
 
 
 export function proxied(req: Request, res: Response, next: NextFunction) {
-  if (req.get('x-forwarded-host') && req.get('x-forwarded-host') === auth.proxy) {
-    (req as any).proxied = true;
-    (req as any).proxied_prefix = url.parse(auth.proxied_service).pathname;
-  }
+  // if (req.get('x-forwarded-host') && req.get('x-forwarded-host') === auth.proxy) {
+  //   (req as any).proxied = true;
+  //   (req as any).proxied_prefix = url.parse(auth.proxied_service).pathname;
+  // }
   next();
 }
 
-function cn(s) {
+function cn(s: string): string {
   const first = s.split(',', 1)[0];
   return first.substr(3).toLowerCase();
 }
 
-function filterGroup(a) {
-  const output = [];
-  let i;
-  let group;
+function filterGroup(a: string[]): string[] {
+  const output: string[] = [];
+  let i: number;
+  let group: string;
   for (i = 0; i < a.length; i += 1) {
     group = cn(a[i]);
     if (group.indexOf('lab.frib') === 0) {
       output.push(group);
-      if (alias.hasOwnProperty(group) && output.indexOf(alias[group]) === -1) {
-        output.push(alias[group]);
+      if (alias.hasOwnProperty(group)) {
+        const groupalias = alias[group];
+        if (groupalias && output.indexOf(groupalias) === -1) {
+          output.push(groupalias);
+        }
       }
     }
   }
@@ -109,6 +112,10 @@ function filterGroup(a) {
 }
 
 export function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (!req.session) {
+    next(new Error('Session not found'));
+    return;
+  }
   const ticketUrl = url.parse(req.url, true);
   if (!!req.session.userid) {
     // logged in already
@@ -137,6 +144,10 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
         error(err.message);
         return res.status(401).send(err.message);
       }
+      if (!req.session) {
+        res.status(500).send('session not found');
+        return;
+      }
       if (result.validated) {
         const userid = result.username;
         // set userid in session
@@ -154,7 +165,11 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
             error(err.name + ' : ' + err1.message);
             return res.status(500).send('something wrong with ad');
           }
-          if (result1.length === 0) {
+          if (!req.session) {
+            res.status(500).send('session not found');
+            return;
+          }
+          if (!result1 || result1.length === 0) {
             warn('cannot find ' + userid);
             return res.status(500).send(userid + ' is not found!');
           }
@@ -164,14 +179,21 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
 
           // set username and memberof in session
           req.session.username = result1[0].displayName;
-          req.session.memberOf = filterGroup(result1[0].memberOf);
+
+          if (Array.isArray(result1[0].memberOf)) {
+            req.session.memberOf = filterGroup((result1[0].memberOf as Array<string | Buffer>).map(String));
+          } else {
+            req.session.memberOf = filterGroup([ String(result1[0].memberOf) ]);
+          }
 
           // load others from db
-          User.findOne({
-            _id: userid,
-          }).exec((err2, user) => {
+          User.findOne({ _id: userid }).exec((err2, user) => {
             if (err2) {
               error(err2.message);
+            }
+            if (!req.session) {
+              res.status(500).send('session not found');
+              return;
             }
             if (user) {
               req.session.roles = user.roles;
@@ -258,8 +280,12 @@ export function checkAuth(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export function verifyRole(role) {
+export function verifyRole(role: string) {
   return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.session) {
+      next(new Error('session not found'));
+      return;
+    }
     // console.log(req.session);
     if (req.session.roles) {
       if (req.session.roles.indexOf(role) > -1) {
@@ -274,7 +300,7 @@ export function verifyRole(role) {
   };
 }
 
-function notKnown(cred) {
+function notKnown(cred: basic.BasicAuthResult) {
   if (apiUsers.hasOwnProperty(cred.name)) {
     if (apiUsers[cred.name] === cred.pass) {
       return false;

@@ -9,6 +9,8 @@ import {
   error,
 } from '../shared/logging';
 
+import * as handlers from '../shared/handlers';
+
 import * as auth from '../lib/auth';
 import * as ldapjs from '../lib/ldap-client';
 
@@ -30,7 +32,7 @@ interface ADConfig {
   groupAttributes: string[];
 }
 
-const pendingPhotos = {};
+const pendingPhotos: { [key: string]: Response[] | undefined } = {};
 
 const options = {
   root: '',
@@ -68,10 +70,12 @@ export function setLDAPClient(client: ldapjs.Client) {
 }
 
 
-function cleanList(id, f) {
+function cleanList(id: string, f: (v: Response) => void) {
   const reslist = pendingPhotos[id];
   delete pendingPhotos[id];
-  reslist.forEach(f);
+  if (reslist) {
+    reslist.forEach(f);
+  }
 }
 
 function fetch_photo_from_ad(id: string) {
@@ -87,7 +91,7 @@ function fetch_photo_from_ad(id: string) {
       cleanList(id, (res) => {
         return res.status(500).send('ldap error');
       });
-    } else if (result.length === 0) {
+    } else if (!result || result.length === 0) {
       cleanList(id, (res) => {
         return res.status(400).send(id + ' is not found');
       });
@@ -133,7 +137,7 @@ function updateUserProfile(user: User, res: Response) {
     if (ldapErr) {
       return res.status(500).json(ldapErr);
     }
-    if (result.length === 0) {
+    if (!result || result.length === 0) {
       return res.status(500).json({
         error: user._id + ' is not found!',
       });
@@ -173,7 +177,7 @@ function addUser(req: Request, res: Response) {
       return res.status(500).json(ldapErr);
     }
 
-    if (result.length === 0) {
+    if (!result || result.length === 0) {
       return res.status(404).send(req.body.name + ' is not found in AD!');
     }
 
@@ -188,7 +192,7 @@ function addUser(req: Request, res: Response) {
       roles.push('admin');
     }
     const user = new User({
-      _id: result[0].sAMAccountName.toLowerCase(),
+      _id: String(result[0].sAMAccountName).toLowerCase(),
       name: result[0].displayName,
       email: result[0].mail,
       office: result[0].physicalDeliveryOfficeName,
@@ -220,6 +224,10 @@ export function init(app: express.Application) {
         error(err);
         return res.status(500).send(err.message);
       }
+      if (!req.session) {
+        res.status(500).send('Session not found');
+        return;
+      }
       if (user) {
         return res.render('user', {
           user: user,
@@ -234,6 +242,9 @@ export function init(app: express.Application) {
 
 
   app.post('/users', auth.ensureAuthenticated, (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
 
     if (req.session.roles === undefined || req.session.roles.indexOf('admin') === -1) {
       return res.status(403).send('only admin allowed');
@@ -260,6 +271,10 @@ export function init(app: express.Application) {
   });
 
   app.get('/users/json', auth.ensureAuthenticated, (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
+
     if (req.session.roles === undefined || req.session.roles.indexOf('admin') === -1) {
       return res.status(403).send('You are not authorized to access this resource. ');
     }
@@ -283,6 +298,10 @@ export function init(app: express.Application) {
         error(err);
         return res.status(500).send(err.message);
       }
+      if (!req.session) {
+        res.status(500).send('Session not found');
+        return;
+      }
       if (user) {
         return res.render('user', {
           user: user,
@@ -296,6 +315,10 @@ export function init(app: express.Application) {
   });
 
   app.put('/users/:id', auth.ensureAuthenticated, (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
+
     if (req.session.roles === undefined || req.session.roles.indexOf('admin') === -1) {
       return res.status(403).send('You are not authorized to access this resource. ');
     }
@@ -333,6 +356,10 @@ export function init(app: express.Application) {
   });
 
   app.get('/users/:id/refresh', auth.ensureAuthenticated, (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
+
     if (req.session.roles === undefined || req.session.roles.indexOf('admin') === -1) {
       return res.status(403).send('You are not authorized to access this resource. ');
     }
@@ -370,7 +397,7 @@ export function init(app: express.Application) {
       if (err) {
         return res.status(500).json(err);
       }
-      if (result.length === 0) {
+      if (!result || result.length === 0) {
         return res.status(500).json({
           error: req.params.id + ' is not found!',
         });
@@ -390,8 +417,10 @@ export function init(app: express.Application) {
   app.get('/adusers/:id/photo', auth.ensureAuthenticated, (req, res) => {
     if (fs.existsSync(options.root + req.params.id + '.jpg')) {
       return res.sendfile(req.params.id + '.jpg', options);
-    } else if (pendingPhotos[req.params.id]) {
-      pendingPhotos[req.params.id].push(res);
+    }
+    const pending = pendingPhotos[req.params.id];
+    if (pending) {
+      pending.push(res);
     } else {
       pendingPhotos[req.params.id] = [res];
       fetch_photo_from_ad(req.params.id);
@@ -419,7 +448,7 @@ export function init(app: express.Application) {
       if (err) {
         return res.status(500).json(err);
       }
-      if (result.length === 0) {
+      if (!result || result.length === 0) {
         return res.json([]);
       }
       return res.json(result);
@@ -448,7 +477,7 @@ export function init(app: express.Application) {
       if (err) {
         return res.status(500).send(err.message);
       }
-      if (result.length === 0) {
+      if (!result || result.length === 0) {
         return res.json([]);
       }
       return res.json(result);

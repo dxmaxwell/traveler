@@ -117,10 +117,11 @@ export function getRouter(opts?: {}) {
       if (!data) {
         return res.status(410).send('gone');
       }
-      if (data.inputType === 'file') {
-        fs.exists(data.file.path, (exists) => {
+      if (data.inputType === 'file' && data.file) {
+        const filePath = data.file.path;
+        fs.exists(filePath, (exists) => {
           if (exists) {
-            return res.sendfile(data.file.path);  // TODO: Path should relative to a configured root directory!
+            return res.sendfile(filePath);  // TODO: Path should relative to a configured root directory!
           }
           return res.status(410).send('gone');
         });

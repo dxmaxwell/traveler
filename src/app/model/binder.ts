@@ -24,16 +24,17 @@ interface ISpec {
 }
 
 export interface IWork {
+  _id: any;
   alias?: string;
   refType: 'traveler' | 'binder';
   addedOn?: Date;
   addedBy?: string;
   status?: number;
-  finished?: number;
-  inProgress?: number;
-  priority?: number;
-  sequence?: number;
-  value?: number;
+  finished: number;
+  inProgress: number;
+  priority: number;
+  sequence: number;
+  value: number;
   color: 'green' | 'yellow' | 'red' | 'blue' | 'black';
 }
 
@@ -45,7 +46,7 @@ export interface IBinder {
   title?: string;
   description?: string;
   status?: number;
-  tags?: string[];
+  tags: string[];
   createdBy?: string;
   createdOn?: Date;
   clonedBy?: string;
@@ -57,18 +58,24 @@ export interface IBinder {
   transferredOn?: Date;
   deadline?: Date;
   publicAccess?: number;
-  sharedWith?: share.IUser[];
-  sharedGroup?: share.IGroup[];
-  works?: IWork[];
-  finishedValue?: number;
-  inProgressValue?: number;
-  totalValue?: number;
+  sharedWith: share.IUser[];
+  sharedGroup: share.IGroup[];
+  works: IWork[];
+  finishedValue: number;
+  inProgressValue: number;
+  totalValue: number;
   archived?: boolean;
 }
 
 export interface Binder extends IBinder, mongoose.Document {
-  updateWorkProgress(this: Binder, spec: ISpec);
-  updateProgress(this: Binder, cb: (err: any, Binder) => void);
+  // properties
+  tags: mongoose.Types.Array<string>;
+  works: mongoose.Types.DocumentArray<Work>;
+  sharedWith: mongoose.Types.DocumentArray<share.User>;
+  sharedGroup: mongoose.Types.DocumentArray<share.Group>;
+  // methods
+  updateWorkProgress(this: Binder, spec: ISpec): void;
+  updateProgress(this: Binder, cb?: (err: any, binder?: Binder) => void): void;
 }
 
 const Schema = mongoose.Schema;
@@ -209,7 +216,9 @@ binderSchema.methods.updateWorkProgress = function(this: Binder, spec: ISpec) {
       w.finished = 0;
       if (spec.totalInput === 0) {
         w.inProgress = 1;
-      } else {
+      } else if (spec.finishedInput === 0) {
+        w.inProgress = 0;
+      } else if (spec.finishedInput && spec.totalInput) {
         w.inProgress = spec.finishedInput / spec.totalInput;
       }
     } else {
@@ -217,15 +226,23 @@ binderSchema.methods.updateWorkProgress = function(this: Binder, spec: ISpec) {
         w.finished = 0;
         w.inProgress = 1;
       } else {
-        w.finished = spec.finishedValue / spec.totalValue;
-        w.inProgress = spec.inProgressValue / spec.totalValue;
+        if (spec.finishedValue === 0) {
+          w.finished = 0;
+        } else if (spec.finishedValue && spec.totalValue) {
+          w.finished = spec.finishedValue / spec.totalValue;
+        }
+        if (spec.inProgressValue === 0) {
+          w.inProgress = 0;
+        } else if (spec.inProgressValue && spec.totalValue) {
+          w.inProgress = spec.inProgressValue / spec.totalValue;
+        }
       }
     }
   }
 };
 
 
-binderSchema.methods.updateProgress = function(this: Binder, cb: (err: any, binder?: Binder) => void) {
+binderSchema.methods.updateProgress = function(this: Binder, cb?: (err: any, binder?: Binder) => void) {
   const works = this.works;
   let totalValue = 0;
   let finishedValue = 0;

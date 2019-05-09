@@ -13,10 +13,14 @@ const ObjectId = Schema.Types.ObjectId;
 
 export interface IForm {
   _id: any;
-  html: string;
+  html?: string;
   activatedOn: Date[];
   reference: ObjectId;
-  alias: string;
+  alias?: string;
+}
+
+export interface Form extends IForm, mongoose.Document {
+  // nothing extra right now
 }
 
 export interface IUser {
@@ -24,12 +28,16 @@ export interface IUser {
   username: string;
 }
 
+export interface User extends IUser, mongoose.Document {
+  // nothing extra right now
+}
+
 export interface ITraveler {
   title?: string;
   description?: string;
-  devices?: string[];
+  devices: string[];
   locations?: string[];
-  manPower?: IUser[];
+  manPower: IUser[];
   status: number;
   createdBy?: string;
   createdOn?: Date;
@@ -42,21 +50,24 @@ export interface ITraveler {
   transferredOn?: Date;
   deadline?: Date;
   publicAccess?: number;
-  sharedWith?: share.IUser[];
-  sharedGroup?: share.IGroup[];
+  sharedWith: share.IUser[];
+  sharedGroup: share.IGroup[];
   referenceForm?: ObjectId;
-  forms?: IForm[];
+  forms: IForm[];
   activeForm?: string;
-  data?: ObjectId[];
-  notes?: ObjectId[];
-  totalInput?: number;
-  finishedInput?: number;
+  data: ObjectId[];
+  notes: ObjectId[];
+  totalInput: number;
+  finishedInput: number;
   archived?: boolean;
 }
 
 export interface Traveler extends ITraveler, mongoose.Document {
-  sharedWith?: mongoose.Types.DocumentArray<share.User>;
-  sharedGroup?: mongoose.Types.DocumentArray<share.Group>;
+  devices: mongoose.Types.Array<string>;
+  forms: mongoose.Types.DocumentArray<Form>;
+  manPower: mongoose.Types.DocumentArray<User>;
+  sharedWith: mongoose.Types.DocumentArray<share.User>;
+  sharedGroup: mongoose.Types.DocumentArray<share.Group>;
 }
 
 export interface ITravelerData {

@@ -2,7 +2,10 @@
  * Implement binder route handlers
  */
 import * as express from 'express';
+import * as mongoose from 'mongoose';
 import * as underscore from 'underscore';
+
+import * as handlers from '../shared/handlers';
 
 import * as auth from '../lib/auth';
 import * as reqUtils from '../lib/req-utils';
@@ -14,7 +17,13 @@ import {
 } from '../model/user';
 
 import {
+  Group as ShareGroup,
+  User as ShareUser,
+} from '../model/share';
+
+import {
   Binder,
+  Work,
 } from '../model/binder';
 
 import {
@@ -24,6 +33,11 @@ import {
 import {
   error,
 } from '../shared/logging';
+
+type ObjectId = mongoose.Types.ObjectId;
+
+type Request = express.Request;
+type Response = express.Response;
 
 let serviceUrl = '';
 
@@ -42,6 +56,9 @@ export function init(app: express.Application) {
   });
 
   app.get('/binders/json', auth.ensureAuthenticated, (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
     Binder.find({
       createdBy: req.session.userid,
       archived: {
@@ -62,14 +79,17 @@ export function init(app: express.Application) {
   // tslint:disable:max-line-length
   app.get('/binders/:id/config', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canWriteMw('id'), (req, res) => {
     return res.render('binder-config', {
-      binder: req[req.params.id],
+      binder: (req as any)[req.params.id],
     });
   });
 
   app.post('/binders/:id/tags', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canWriteMw('id'), reqUtils.filter('body', ['newtag']), reqUtils.sanitize('body', ['newtag']), (req, res) => {
-    const doc = req[req.params.id];
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
+    const doc: Binder = (req as any)[req.params.id];
     doc.updatedBy = req.session.userid;
-    doc.updatedOn = Date.now();
+    doc.updatedOn = new Date();
     doc.tags.addToSet(req.body.newtag);
     doc.save((saveErr) => {
       if (saveErr) {
@@ -81,9 +101,12 @@ export function init(app: express.Application) {
   });
 
   app.delete('/binders/:id/tags/:tag', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canWriteMw('id'), (req, res) => {
-    const doc = req[req.params.id];
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
+    const doc: Binder = (req as any)[req.params.id];
     doc.updatedBy = req.session.userid;
-    doc.updatedOn = Date.now();
+    doc.updatedOn = new Date();
     doc.tags.pull(req.params.tag);
     doc.save((saveErr) => {
       if (saveErr) {
@@ -95,15 +118,17 @@ export function init(app: express.Application) {
   });
 
   app.put('/binders/:id/config', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.isOwnerMw('id'), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['title', 'description']), reqUtils.sanitize('body', ['title', 'description']), (req, res) => {
-    let k;
-    const doc = req[req.params.id];
-    for (k in req.body) {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
+    const doc: Binder = (req as any)[req.params.id];
+    for (const k in req.body) {
       if (req.body.hasOwnProperty(k) && req.body[k] !== null) {
-        doc[k] = req.body[k];
+        (doc as any)[k] = req.body[k];
       }
     }
     doc.updatedBy = req.session.userid;
-    doc.updatedOn = Date.now();
+    doc.updatedOn = new Date();
     doc.save((saveErr) => {
       if (saveErr) {
         error(saveErr);
@@ -115,7 +140,7 @@ export function init(app: express.Application) {
 
 
   app.get('/binders/:id/share', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.isOwnerMw('id'), (req, res) => {
-    const binder = req[req.params.id];
+    const binder: Binder = (req as any)[req.params.id];
     return res.render('share', {
       type: 'Binder',
       id: req.params.id,
@@ -125,7 +150,7 @@ export function init(app: express.Application) {
   });
 
   app.put('/binders/:id/share/public', auth.ensureAuthenticated, reqUtils.filter('body', ['access']), reqUtils.exist('id', Binder), reqUtils.isOwnerMw('id'), (req, res) => {
-    const binder = req[req.params.id];
+    const binder: Binder = (req as any)[req.params.id];
     let access = req.body.access;
     if (['-1', '0', '1'].indexOf(access) === -1) {
       return res.status(400).send('not valid value');
@@ -145,7 +170,7 @@ export function init(app: express.Application) {
   });
 
   app.get('/binders/:id/share/:list/json', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canReadMw('id'), (req, res) => {
-    const binder = req[req.params.id];
+    const binder: Binder = (req as any)[req.params.id];
     if (req.params.list === 'users') {
       return res.status(200).json(binder.sharedWith || []);
     }
@@ -156,7 +181,7 @@ export function init(app: express.Application) {
   });
 
   app.post('/binders/:id/share/:list', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.isOwnerMw('id'), (req, res) => {
-    const binder = req[req.params.id];
+    const binder: Binder = (req as any)[req.params.id];
     let share = -2;
     if (req.params.list === 'users') {
       if (req.body.name) {
@@ -188,8 +213,8 @@ export function init(app: express.Application) {
   });
 
   app.put('/binders/:id/share/:list/:shareid', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.isOwnerMw('id'), (req, res) => {
-    const binder = req[req.params.id];
-    let share;
+    const binder: Binder = (req as any)[req.params.id];
+    let share: ShareUser | ShareGroup | undefined;
     if (req.params.list === 'users') {
       share = binder.sharedWith.id(req.params.shareid);
     }
@@ -214,31 +239,33 @@ export function init(app: express.Application) {
         return res.status(500).send(saveErr.message);
       }
       // check consistency of user's traveler list
-      let Target;
+      let Target: mongoose.Model<User | Group> | undefined;
       if (req.params.list === 'users') {
         Target = User;
       }
       if (req.params.list === 'groups') {
         Target = Group;
       }
-      Target.findByIdAndUpdate(req.params.shareid, {
-        $addToSet: {
-          binders: binder._id,
-        },
-      }, (updateErr, target) => {
-        if (updateErr) {
-          error(updateErr);
-        }
-        if (!target) {
-          error('The user/group ' + req.params.userid + ' is not in the db');
-        }
-      });
+      if (Target) {
+        Target.findByIdAndUpdate(req.params.shareid, {
+          $addToSet: {
+            binders: binder._id,
+          },
+        }, (updateErr, target) => {
+          if (updateErr) {
+            error(updateErr);
+          }
+          if (!target) {
+            error('The user/group ' + req.params.userid + ' is not in the db');
+          }
+        });
+      }
       return res.status(200).json(share);
     });
   });
 
   app.delete('/binders/:id/share/:list/:shareid', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.isOwnerMw('id'), (req, res) => {
-    const binder = req[req.params.id];
+    const binder: Binder = (req as any)[req.params.id];
     shareLib.removeShare(req, res, binder);
   });
 
@@ -247,6 +274,9 @@ export function init(app: express.Application) {
   });
 
   app.post('/binders', auth.ensureAuthenticated, reqUtils.filter('body', ['title', 'description']), reqUtils.hasAll('body', ['title']), reqUtils.sanitize('body', ['title', 'description']), (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
     const binder: {
       works?: unknown[];
       title?: unknown;
@@ -278,6 +308,9 @@ export function init(app: express.Application) {
   });
 
   app.get('/transferredbinders/json', auth.ensureAuthenticated, (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
     Binder.find({
       owner: req.session.userid,
       archived: {
@@ -293,6 +326,9 @@ export function init(app: express.Application) {
   });
 
   app.get('/ownedbinders/json', auth.ensureAuthenticated, (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
     const search = {
       archived: {
         $ne: true,
@@ -317,6 +353,9 @@ export function init(app: express.Application) {
   });
 
   app.get('/sharedbinders/json', auth.ensureAuthenticated, (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
     User.findOne({
       _id: req.session.userid,
     }, 'binders').exec((err, me) => {
@@ -345,6 +384,9 @@ export function init(app: express.Application) {
   });
 
   app.get('/groupsharedbinders/json', auth.ensureAuthenticated, (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
     Group.find({
       _id: {
         $in: req.session.memberOf,
@@ -380,6 +422,9 @@ export function init(app: express.Application) {
   });
 
   app.get('/archivedbinders/json', auth.ensureAuthenticated, (req, res) => {
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
     Binder.find({
       createdBy: req.session.userid,
       archived: true,
@@ -393,7 +438,7 @@ export function init(app: express.Application) {
   });
 
   app.put('/binders/:id/archived', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['archived']), (req, res) => {
-    const doc = req[req.params.id];
+    const doc: Binder = (req as any)[req.params.id];
     if (doc.archived === req.body.archived) {
       return res.send(204);
     }
@@ -401,10 +446,10 @@ export function init(app: express.Application) {
     doc.archived = req.body.archived;
 
     if (doc.archived) {
-      doc.archivedOn = Date.now();
+      doc.archivedOn = new Date();
     }
 
-    doc.save((saveErr, newDoc) => {
+    doc.save((saveErr: any, newDoc) => {
       if (saveErr) {
         error(saveErr);
         return res.status(500).send(saveErr.message);
@@ -415,22 +460,22 @@ export function init(app: express.Application) {
   });
 
   app.put('/binders/:id/owner', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.isOwnerMw('id'), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['name']), (req, res) => {
-    const doc = req[req.params.id];
+    const doc: Binder = (req as any)[req.params.id];
     shareLib.changeOwner(req, res, doc);
   });
 
   app.get('/binders/:id', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canReadMw('id'), (req, res) => {
     res.render('binder', {
-      binder: req[req.params.id],
+      binder: (req as any)[req.params.id],
     });
   });
 
   app.get('/binders/:id/json', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canReadMw('id'), reqUtils.exist('id', Binder), (req, res) => {
-    res.status(200).json(req[req.params.id]);
+    res.status(200).json((req as any)[req.params.id]);
   });
 
   app.put('/binders/:id/status', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['status']), reqUtils.hasAll('body', ['status']), (req, res) => {
-    const p = req[req.params.id];
+    const p: Binder = (req as any)[req.params.id];
     const s = req.body.status;
 
     if ([1, 2].indexOf(s) === -1) {
@@ -442,7 +487,7 @@ export function init(app: express.Application) {
     }
 
     if (s === 1) {
-      if ([0, 2].indexOf(p.status) === -1) {
+      if (!p.status || [0, 2].indexOf(p.status) === -1) {
         return res.status(400).send('invalid status change');
       } else {
         p.status = s;
@@ -450,14 +495,14 @@ export function init(app: express.Application) {
     }
 
     if (s === 2) {
-      if ([1].indexOf(p.status) === -1) {
+      if (!p.status || [1].indexOf(p.status) === -1) {
         return res.status(400).send('invalid status change');
       } else {
         p.status = s;
       }
     }
 
-    p.save((err) => {
+    p.save((err: any) => {
       if (err) {
         error(err);
         return res.status(500).send(err.message);
@@ -467,7 +512,7 @@ export function init(app: express.Application) {
 
   });
 
-  function sendMerged(t, p, res, merged, binder) {
+  function sendMerged(t: boolean, p: boolean, res: Response, merged: Array<Traveler | Binder>, binder: Binder) {
     if (t && p) {
       if (binder.isModified()) {
         binder.updateProgress();
@@ -477,11 +522,11 @@ export function init(app: express.Application) {
   }
 
   app.get('/binders/:id/works/json', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canReadMw('id'), (req, res) => {
-    const binder = req[req.params.id];
+    const binder: Binder = (req as any)[req.params.id];
     const works = binder.works;
 
-    const tids = [];
-    const pids = [];
+    const tids: ObjectId[] = [];
+    const pids: ObjectId[] = [];
 
     works.forEach((w) => {
       if (w.refType === 'traveler') {
@@ -495,7 +540,7 @@ export function init(app: express.Application) {
       return res.status(200).json([]);
     }
 
-    const merged = [];
+    const merged: Array<Traveler | Binder> = [];
 
     let tFinished = false;
     let pFinished = false;
@@ -513,7 +558,7 @@ export function init(app: express.Application) {
         _id: {
           $in: tids,
         },
-      }, 'devices locations manPower status createdBy owner sharedWith finishedInput totalInput').lean().exec((err, travelers) => {
+      }, 'devices locations manPower status createdBy owner sharedWith finishedInput totalInput').lean().exec((err, travelers: Traveler[]) => {
         if (err) {
           error(err);
           return res.status(500).send(err.message);
@@ -537,7 +582,7 @@ export function init(app: express.Application) {
         _id: {
           $in: pids,
         },
-      }, 'tags status createdBy owner finishedValue inProgressValue totalValue').lean().exec((err, binders) => {
+      }, 'tags status createdBy owner finishedValue inProgressValue totalValue').lean().exec((err, binders: Binder[]) => {
         binders.forEach((p) => {
           binder.updateWorkProgress(p);
           underscore.extend(p, works.id(p._id).toJSON());
@@ -549,12 +594,12 @@ export function init(app: express.Application) {
     }
   });
 
-  function addWork(p, req, res) {
-    const tids = req.body.travelers;
-    const pids = req.body.binders;
-    let ids;
-    let type;
-    let model;
+  function addWork(p: Binder, req: Request, res: Response) {
+    const tids: string[] | undefined = req.body.travelers;
+    const pids: string[] | undefined = req.body.binders;
+    let ids: string[];
+    let type: string;
+    let model: mongoose.Model<Traveler | Binder>;
     if (tids) {
       if (tids.length === 0) {
         return res.send(204);
@@ -563,7 +608,7 @@ export function init(app: express.Application) {
       model = Traveler;
       ids = tids;
     } else {
-      if (pids.length === 0) {
+      if (!pids || pids.length === 0) {
         return res.send(204);
       }
       type = 'binder';
@@ -588,21 +633,28 @@ export function init(app: express.Application) {
         return res.send(204);
       }
 
-      items.forEach((item) => {
+      if (!req.session) {
+        res.status(500).send('Session not found');
+        return;
+      }
+
+      for (const item of items) {
         if (type === 'binder' && item.id === p.id) {
           // do not add itself as a work
           return;
         }
-        let newWork;
+
         if (!works.id(item._id)) {
-          newWork = {
+          const newWork = {
             _id: item._id,
             alias: item.title,
             refType: type,
             addedOn: Date.now(),
             addedBy: req.session.userid,
             status: item.status || 0,
-            value: item.value || 10,
+            value: (item as any).value || 10,
+            finished: 0,
+            inProgress: 0,
           };
           if (item.status === 2) {
             newWork.finished = 1;
@@ -613,18 +665,18 @@ export function init(app: express.Application) {
           } else {
             if (type === 'traveler') {
               newWork.finished = 0;
-              if (item.totalInput === 0) {
+              if ((item as Traveler).totalInput === 0) {
                 newWork.inProgress = 1;
               } else {
-                newWork.inProgress = item.finishedInput / item.totalInput;
+                newWork.inProgress = (item as Traveler).finishedInput / (item as Traveler).totalInput;
               }
             } else {
-              if (item.totalValue === 0) {
+              if ((item as Binder).totalValue === 0) {
                 newWork.finished = 0;
                 newWork.inProgress = 1;
               } else {
-                newWork.finished = item.finishedValue / item.totalValue;
-                newWork.inProgress = item.inProgressValue / item.totalValue;
+                newWork.finished = (item as Binder).finishedValue / (item as Binder).totalValue;
+                newWork.inProgress = (item as Binder).inProgressValue / (item as Binder).totalValue;
               }
             }
 
@@ -633,13 +685,13 @@ export function init(app: express.Application) {
           works.push(newWork);
           added.push(item.id);
         }
-      });
+      }
 
       if (added.length === 0) {
         return res.send(204);
       }
 
-      p.updatedOn = Date.now();
+      p.updatedOn = new Date();
       p.updatedBy = req.session.userid;
 
       // update the totalValue, finishedValue, and finishedValue
@@ -654,12 +706,16 @@ export function init(app: express.Application) {
   }
 
   app.post('/binders/:id', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canWriteMw('id'), reqUtils.status('id', [0, 1]), reqUtils.filter('body', ['travelers', 'binders']), (req, res) => {
-    addWork(req[req.params.id], req, res);
+    addWork((req as any)[req.params.id], req, res);
   });
 
 
   app.delete('/binders/:id/works/:wid', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canWriteMw('id'), reqUtils.status('id', [0, 1]), (req, res) => {
-    const p = req[req.params.id];
+    if (!req.session) {
+      throw new handlers.RequestError('Session not found');
+    }
+
+    const p: Binder = (req as any)[req.params.id];
     const work = p.works.id(req.params.wid);
 
     if (!work) {
@@ -668,7 +724,7 @@ export function init(app: express.Application) {
 
     work.remove();
     p.updatedBy = req.session.userid;
-    p.updatedOn = Date.now();
+    p.updatedOn = new Date();
 
     p.updateProgress((err, newPackage) => {
       if (err) {
@@ -681,12 +737,12 @@ export function init(app: express.Application) {
   });
 
   app.put('/binders/:id/works', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.canWriteMw('id'), reqUtils.status('id', [0, 1]), (req, res) => {
-    const binder = req[req.params.id];
+    const binder: Binder = (req as any)[req.params.id];
     const works = binder.works;
     const updates = req.body;
-    let wid;
-    let work;
-    let prop;
+    let wid: string;
+    let work: Work;
+    let prop: string;
     let u;
     let valueChanged = false;
     for (wid in updates) {
@@ -704,11 +760,11 @@ export function init(app: express.Application) {
         if (!u.hasOwnProperty(prop)) {
           continue;
         }
-        if (work[prop] !== u[prop]) {
+        if ((work as any)[prop] !== u[prop]) {
           if (prop === 'value') {
             valueChanged = true;
           }
-          work[prop] = u[prop];
+          (work as any)[prop] = u[prop];
         }
       }
     }
@@ -717,10 +773,11 @@ export function init(app: express.Application) {
       return res.send(204);
     }
 
-    const cb = (err, newWP) => {
+    const cb = (err: any, newWP: Binder): void => {
       if (err) {
         error(err);
-        return res.status(500).send('cannot save the updates to binder ' + binder._id);
+        res.status(500).send('cannot save the updates to binder ' + binder._id);
+        return;
       }
       res.status(200).json(newWP.works);
     };
