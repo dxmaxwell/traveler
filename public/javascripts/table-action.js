@@ -15,7 +15,7 @@ function archiveFromModal(archive, type, fromTable, toTable, otherTable) {
   $('#modal .modal-body div.target').each(function () {
     var that = this;
     $.ajax({
-      url: '/' + type + '/' + that.id + '/archived',
+      url: basePath + '/' + type + '/' + that.id + '/archived',
       type: 'PUT',
       contentType: 'application/json',
       data: JSON.stringify({
@@ -50,7 +50,7 @@ function transferFromModal(newOwnerName, type, table) {
   $('#modal .modal-body div.target').each(function () {
     var that = this;
     $.ajax({
-      url: '/' + type + '/' + that.id + '/owner',
+      url: basePath + '/' + type + '/' + that.id + '/owner',
       type: 'PUT',
       contentType: 'application/json',
       data: JSON.stringify({

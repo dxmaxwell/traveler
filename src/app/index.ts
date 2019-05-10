@@ -5,6 +5,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as net from 'net';
 import * as path from 'path';
+import * as url from 'url';
 import * as util from 'util';
 
 // Required syntax because the type declaration uses 'export = rc;'.
@@ -413,7 +414,8 @@ async function doStart(): Promise<express.Application> {
 
   auth.setAuthConfig({
     cas: String(cfg.cas.cas_url),
-    service: String(cfg.cas.service_base_url) + String(cfg.cas.service_url),
+    // Need to resolve the service URL using same method as the `passport-cas` library
+    service: url.resolve(String(cfg.cas.service_base_url), String(cfg.cas.service_url)),
   });
 
   auth.setAliases(cfg.aliases);

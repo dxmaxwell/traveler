@@ -4,13 +4,13 @@
 /*global archiveFromModal, transferFromModal, modalScroll*/
 
 $(function () {
-  ajax401(prefix);
-  updateAjaxURL(prefix);
+  ajax401(basePath);
+  // updateAjaxURL(prefix);
   disableAjaxCache();
   var publicBindersAoColumns = [binderLinkColumn, titleColumn, tagsColumn, ownerColumn, createdOnColumn, updatedByColumn, updatedOnColumn, binderProgressColumn];
   fnAddFilterFoot('#public-binders-table', publicBindersAoColumns);
   $('#public-binders-table').dataTable({
-    sAjaxSource: '/publicbinders/json',
+    sAjaxSource: basePath + '/publicbinders/json',
     sAjaxDataProp: '',
     fnInitComplete: function () {
       Holder.run({

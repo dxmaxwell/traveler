@@ -6,16 +6,10 @@ import * as express from 'express';
 
 export function init(app: express.Application) {
   app.get('/docs', (req, res) => {
-    res.render('doc-in-one', {
-      // prefix: req.proxied ? req.proxied_prefix : ''
-      prefix: '',
-    });
+    res.render('doc-in-one');
   });
 
   app.get('/docs/form-manager', (req, res) => {
-    res.render('doc-form-manager', {
-      // prefix: req.proxied ? req.proxied_prefix : ''
-      prefix: '',
-    });
+    res.render('doc-form-manager');
   });
 }

@@ -17,7 +17,7 @@ function cloneFromModal(travelerTable, sharedTravelerTable, groupSharedTravelerT
     var that = this;
     var success = false;
     $.ajax({
-      url: '/travelers',
+      url: basePath + '/travelers',
       type: 'POST',
       contentType: 'application/json',
       data: JSON.stringify({
@@ -49,7 +49,7 @@ function addTravelers(travelers, binders) {
   var number = binders.length;
   binders.forEach(function (p) {
     $.ajax({
-      url: '/binders/' + p,
+      url: basePath + '/binders/' + p,
       type: 'POST',
       contentType: 'application/json',
       data: JSON.stringify({
@@ -71,13 +71,13 @@ function showHash() {
 }
 
 $(function () {
-  ajax401(prefix);
-  updateAjaxURL(prefix);
+  ajax401(basePath);
+  // updateAjaxURL(prefix);
   disableAjaxCache();
   var travelerAoColumns = [selectColumn, travelerConfigLinkColumn, travelerShareLinkColumn, travelerLinkColumn, titleColumn, statusColumn, deviceColumn, sharedWithColumn, sharedGroupColumn, createdOnColumn, deadlineColumn, filledByColumn, updatedOnColumn, travelerProgressColumn];
   fnAddFilterFoot('#traveler-table', travelerAoColumns);
   var travelerTable = $('#traveler-table').dataTable({
-    sAjaxSource: '/travelers/json',
+    sAjaxSource: basePath + '/travelers/json',
     sAjaxDataProp: '',
     fnInitComplete: function () {
       Holder.run({
@@ -106,7 +106,7 @@ $(function () {
   /*transferred traveler table starts*/
   var transferredTravelerAoColumns = [selectColumn, travelerConfigLinkColumn, travelerShareLinkColumn, travelerLinkColumn, titleColumn, statusColumn, deviceColumn, sharedWithColumn, sharedGroupColumn, createdOnColumn, transferredOnColumn, deadlineColumn, filledByColumn, updatedOnColumn, travelerProgressColumn];
   var transferredTravelerTable = $('#transferred-traveler-table').dataTable({
-    sAjaxSource: '/transferredtravelers/json',
+    sAjaxSource: basePath + '/transferredtravelers/json',
     sAjaxDataProp: '',
     fnInitComplete: function () {
       Holder.run({
@@ -138,7 +138,7 @@ $(function () {
   var sharedTravelerAoColumns = [selectColumn, travelerLinkColumn, titleColumn, statusColumn, deviceColumn, sharedWithColumn, sharedGroupColumn, ownerColumn, createdOnColumn, deadlineColumn, filledByColumn, updatedOnColumn, travelerProgressColumn];
   fnAddFilterFoot('#shared-traveler-table', sharedTravelerAoColumns);
   var sharedTravelerTable = $('#shared-traveler-table').dataTable({
-    sAjaxSource: '/sharedtravelers/json',
+    sAjaxSource: basePath + '/sharedtravelers/json',
     sAjaxDataProp: '',
     fnInitComplete: function () {
       Holder.run({
@@ -166,7 +166,7 @@ $(function () {
   var groupSharedTravelerAoColumns = [selectColumn, travelerLinkColumn, titleColumn, statusColumn, deviceColumn, sharedWithColumn, sharedGroupColumn, ownerColumn, createdOnColumn, deadlineColumn, filledByColumn, updatedOnColumn, travelerProgressColumn];
   fnAddFilterFoot('#group-shared-traveler-table', sharedTravelerAoColumns);
   var groupSharedTravelerTable = $('#group-shared-traveler-table').dataTable({
-    sAjaxSource: '/groupsharedtravelers/json',
+    sAjaxSource: basePath + '/groupsharedtravelers/json',
     sAjaxDataProp: '',
     fnInitComplete: function () {
       Holder.run({
@@ -194,7 +194,7 @@ $(function () {
   var archivedTravelerAoColumns = [selectColumn, travelerLinkColumn, titleColumn, archivedOnColumn, statusColumn, deviceColumn, sharedWithColumn, sharedGroupColumn, createdOnColumn, deadlineColumn, filledByColumn, updatedOnColumn, travelerProgressColumn];
   fnAddFilterFoot('#archived-traveler-table', archivedTravelerAoColumns);
   var archivedTravelerTable = $('#archived-traveler-table').dataTable({
-    sAjaxSource: '/archivedtravelers/json',
+    sAjaxSource: basePath + '/archivedtravelers/json',
     sAjaxDataProp: '',
     fnInitComplete: function () {
       Holder.run({
@@ -306,7 +306,7 @@ $(function () {
       var binderAoColumns = [selectColumn, binderLinkColumn, titleColumn, tagsColumn, createdOnColumn, updatedOnColumn];
       fnAddFilterFoot('#owned-binder-table', binderAoColumns);
       var ownedBinderTable = $('#owned-binder-table').dataTable({
-        sAjaxSource: '/ownedbinders/json',
+        sAjaxSource: basePath + '/ownedbinders/json',
         sAjaxDataProp: '',
         bAutoWidth: false,
         iDisplayLength: 5,

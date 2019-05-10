@@ -5,14 +5,14 @@
 /*global ajax401: false, updateAjaxURL: false, disableAjaxCache: false, prefix: false, Holder*/
 
 $(function () {
-  updateAjaxURL(prefix);
-  ajax401(prefix);
+  // updateAjaxURL(prefix);
+  ajax401(basePath);
   disableAjaxCache();
 
   var workAoColumns = [travelerLinkColumn, sColumn, pColumn, vColumn, cColumn, aliasColumn, ownerColumn, deviceTagColumn, manPowerColumn, workProgressColumn];
 
   var worksTable = $('#work-table').dataTable({
-    sAjaxSource: './works/json',
+    sAjaxSource: window.location.pathname + '/works/json',
     sAjaxDataProp: '',
     bAutoWidth: false,
     bPaginate: false,

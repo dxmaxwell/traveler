@@ -3,13 +3,13 @@
 /*global formLinkColumn: false, titleColumn: false, ownerColumn: false, createdOnColumn: false, sharedWithColumn: false, sharedGroupColumn: false, fnAddFilterFoot: false, createdByColumn: false, createdOnColumn: false, sDomNoTools: false, filterEvent: false*/
 
 $(function () {
-  ajax401(prefix);
-  updateAjaxURL(prefix);
+  ajax401(basePath);
+  // updateAjaxURL(prefix);
   disableAjaxCache();
   var publicFormsAoColumns = [formLinkColumn, titleColumn, createdByColumn, createdOnColumn, ownerColumn, sharedWithColumn, sharedGroupColumn];
   fnAddFilterFoot('#public-forms-table', publicFormsAoColumns);
   $('#public-forms-table').dataTable({
-    sAjaxSource: '/publicforms/json',
+    sAjaxSource: basePath + '/publicforms/json',
     sAjaxDataProp: '',
     bAutoWidth: false,
     iDisplayLength: 10,

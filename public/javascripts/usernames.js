@@ -7,7 +7,7 @@ travelerGlobal.usernames = new Bloodhound({
     return user.displayName;
   },
   prefetch: {
-    url: prefix ? prefix + '/adusernames' : '/adusernames',
+    url: basePath + '/adusernames',
     cacheKey: 'adusernames'
   }
 });

@@ -97,11 +97,10 @@ function createTraveler(form: Form, req: Request, res: Response) {
       return res.status(500).send(err.message);
     }
     info('new traveler ' + doc.id + ' created');
-    const url = serviceUrl + '/travelers/' + doc.id + '/';
+    const url = serviceUrl + '/travelers/' + doc.id;
     res.set('Location', url);
     return res.status(201).json({
-      // location: (req.proxied ? req.proxied_prefix : '') + '/travelers/' + doc.id + '/'
-      location: res.locals.basePath + '/travelers/' + doc.id,
+      location: url,
     });
   });
 }

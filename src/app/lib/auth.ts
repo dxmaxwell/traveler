@@ -78,15 +78,6 @@ export function setAPIUsers(users: ApiUserConfig) {
   apiUsers = users;
 }
 
-
-export function proxied(req: Request, res: Response, next: NextFunction) {
-  // if (req.get('x-forwarded-host') && req.get('x-forwarded-host') === auth.proxy) {
-  //   (req as any).proxied = true;
-  //   (req as any).proxied_prefix = url.parse(auth.proxied_service).pathname;
-  // }
-  next();
-}
-
 function cn(s: string): string {
   const first = s.split(',', 1)[0];
   return first.substr(3).toLowerCase();
@@ -267,7 +258,6 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
 
 export function sessionLocals(req: Request, res: Response, next: NextFunction) {
   (res as any).locals.session = req.session;
-  (res as any).locals.prefix =  (req as any).proxied ? (req as any).proxied_prefix : '';
   next();
 }
 

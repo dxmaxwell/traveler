@@ -232,8 +232,6 @@ export function init(app: express.Application) {
         return res.render('user', {
           user: user,
           myRoles: req.session.roles,
-          // prefix: req.proxied ? req.proxied_prefix : ''
-          prefix: '',
         });
       }
       return res.status(404).send(req.params.name + ' not found');
@@ -306,8 +304,6 @@ export function init(app: express.Application) {
         return res.render('user', {
           user: user,
           myRoles: req.session.roles,
-          // prefix: req.proxied ? req.proxied_prefix : ''
-          prefix: '',
         });
       }
       return res.status(404).send(req.params.id + ' has never logged into the application.');

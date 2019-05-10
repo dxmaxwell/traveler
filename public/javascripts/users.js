@@ -18,7 +18,7 @@ function updateFromModal(cb) {
   $('#modal .modal-body div').each(function () {
     var that = this;
     $.ajax({
-      url: '/users/' + that.id + '/refresh',
+      url: basePath + '/users/' + that.id + '/refresh',
       type: 'GET'
     }).done(function () {
       $(that).prepend('<i class="fa fa-check"></i>');
@@ -47,7 +47,7 @@ function modifyFromModal(cb) {
   $('#modal .modal-body div').each(function () {
     var that = this;
     $.ajax({
-      url: '/users/' + that.id,
+      url: basePath + '/users/' + that.id,
       type: 'PUT',
       contentType: 'application/json',
       data: JSON.stringify({
@@ -71,7 +71,7 @@ function modifyFromModal(cb) {
 }
 
 $(function () {
-  updateAjaxURL(prefix);
+  // updateAjaxURL(prefix);
 
   travelerGlobal.usernames.initialize();
 
@@ -89,7 +89,7 @@ $(function () {
   var userColumns = [selectColumn, useridColumn, fullNameNoLinkColumn, rolesColumn, lastVisitedOnColumn];
 
   var userTable = $('#users-table').dataTable({
-    sAjaxSource: '/users/json',
+    sAjaxSource: basePath + '/users/json',
     sAjaxDataProp: '',
     fnInitComplete: function () {
       Holder.run({
@@ -124,7 +124,7 @@ $(function () {
       $('#message').append('<div class="alert alert-info"><button class="close" data-dismiss="alert">x</button>The user named <strong>' + name + '</strong> is already in the user list. </div>');
     } else {
       $.ajax({
-        url: '/users',
+        url: basePath + '/users',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({

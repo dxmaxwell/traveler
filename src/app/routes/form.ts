@@ -209,10 +209,7 @@ export function init(app: express.Application) {
   });
 
   app.get('/forms/new', auth.ensureAuthenticated, (req, res) => {
-    return res.render('form-new', {
-      // prefix: req.proxied ? req.proxied_prefix : ''
-      prefix: '',
-    });
+    return res.render('form-new');
   });
 
   app.get('/forms/:id', auth.ensureAuthenticated, reqUtils.exist('id', Form), (req, res) => {
@@ -233,8 +230,6 @@ export function init(app: express.Application) {
         title: form.title,
         html: form.html,
         status: form.status,
-        prefix: '',
-        // prefix: req.proxied ? req.proxied_prefix : ''
       });
     }
 
@@ -303,8 +298,6 @@ export function init(app: express.Application) {
       id: req.params.id,
       title: form.title,
       html: form.html,
-      // prefix: req.proxied ? req.proxied_prefix : ''
-      prefix: '',
     });
   });
 

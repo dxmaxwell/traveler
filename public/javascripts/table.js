@@ -60,7 +60,7 @@ function personColumn(title, key) {
       if (type === 'sort' || type === 'filter') {
         return data;
       } else if (data) {
-        return '<img class="user" data-src="holder.js/27x40?size=20&text=' + data.substr(0, 1).toUpperCase() + '" src="' + prefix + '/adusers/' + data + '/photo" title="' + data + '">';
+        return '<img class="user" data-src="holder.js/27x40?size=20&text=' + data.substr(0, 1).toUpperCase() + '" src="' + basePath + '/adusers/' + data + '/photo" title="' + data + '">';
       } else {
         return '';
       }
@@ -293,7 +293,7 @@ var referenceFormLinkColumn = {
   sTitle: 'Reference',
   mData: 'reference',
   mRender: function (data) {
-    return '<a href="' + prefix + '/forms/' + data + '/" target="_blank" data-toggle="tooltip" title="go to the form"><i class="fa fa-edit fa-lg"></i></a>';
+    return '<a href="' + basePath + '/forms/' + data + '" target="_blank" data-toggle="tooltip" title="go to the form"><i class="fa fa-edit fa-lg"></i></a>';
   },
   bSortable: false
 };
@@ -302,7 +302,7 @@ var formColumn = {
   sTitle: 'Link',
   mData: '_id',
   mRender: function (data) {
-    return '<a href="' + prefix + '/forms/' + data + '/" target="_blank" data-toggle="tooltip" title="go to the form"><i class="fa fa-edit fa-lg"></i></a>';
+    return '<a href="' + basePath + '/forms/' + data + '" target="_blank" data-toggle="tooltip" title="go to the form"><i class="fa fa-edit fa-lg"></i></a>';
   },
   bSortable: false
 };
@@ -335,7 +335,7 @@ var formLinkColumn = {
   sTitle: '',
   mData: '_id',
   mRender: function (data) {
-    return '<a href="' + prefix + '/forms/' + data + '/" target="_blank" data-toggle="tooltip" title="go to the form"><i class="fa fa-edit fa-lg"></i></a>';
+    return '<a href="' + basePath + '/forms/' + data + '" target="_blank" data-toggle="tooltip" title="go to the form"><i class="fa fa-edit fa-lg"></i></a>';
   },
   bSortable: false
 };
@@ -344,9 +344,9 @@ var formShareLinkColumn = {
   sTitle: '',
   mData: function (source) {
     if (source.publicAccess >= 0) {
-      return '<a href="' + prefix + '/forms/' + source._id + '/share/" target="_blank" data-toggle="tooltip" title="share the form" class="text-success"><i class="fa fa-users fa-lg"></i></a>';
+      return '<a href="' + basePath + '/forms/' + source._id + '/share" target="_blank" data-toggle="tooltip" title="share the form" class="text-success"><i class="fa fa-users fa-lg"></i></a>';
     }
-    return '<a href="' + prefix + '/forms/' + source._id + '/share/" target="_blank" data-toggle="tooltip" title="share the form"><i class="fa fa-users fa-lg"></i></a>';
+    return '<a href="' + basePath + '/forms/' + source._id + '/share" target="_blank" data-toggle="tooltip" title="share the form"><i class="fa fa-users fa-lg"></i></a>';
   },
   bSortable: false
 };
@@ -361,7 +361,7 @@ var ownerColumn = {
     if (type === 'sort' || type === 'filter') {
       return owner;
     } else if (owner) {
-      return '<a target="_blank" href="/users/' + owner + '"><img class="user" data-src="holder.js/27x40?size=20&text=' + owner.substr(0, 1).toUpperCase() + '" src="' + prefix + '/adusers/' + owner + '/photo" title="' + owner + '"></a>';
+      return '<a target="_blank" href="/users/' + owner + '"><img class="user" data-src="holder.js/27x40?size=20&text=' + owner.substr(0, 1).toUpperCase() + '" src="' + basePath + '/adusers/' + owner + '/photo" title="' + owner + '"></a>';
     } else {
       return '';
     }
@@ -414,7 +414,7 @@ var travelerLinkColumn = {
       return '<a href="' + source.url + '" target="_blank" data-toggle="tooltip" title="go to the traveler"><i class="fa fa-edit fa-lg"></i></a>';
     }
     if (source.hasOwnProperty('_id')) {
-      return '<a href="' + prefix + '/travelers/' + source._id + '/" target="_blank" data-toggle="tooltip" title="go to the traveler"><i class="fa fa-edit fa-lg"></i></a>';
+      return '<a href="' + basePath + '/travelers/' + source._id + '" target="_blank" data-toggle="tooltip" title="go to the traveler"><i class="fa fa-edit fa-lg"></i></a>';
     }
     return 'unknown';
   },
@@ -425,7 +425,7 @@ var travelerConfigLinkColumn = {
   sTitle: '',
   mData: '_id',
   mRender: function (data, type, full) {
-    return '<a href="' + prefix + '/travelers/' + data + '/config" target="_blank" data-toggle="tooltip" title="config the traveler"><i class="fa fa-gear fa-lg"></i></a>';
+    return '<a href="' + basePath + '/travelers/' + data + '/config" target="_blank" data-toggle="tooltip" title="config the traveler"><i class="fa fa-gear fa-lg"></i></a>';
   },
   bSortable: false
 };
@@ -434,9 +434,9 @@ var travelerShareLinkColumn = {
   sTitle: '',
   mData: function (source) {
     if (source.publicAccess >= 0) {
-      return '<a href="' + prefix + '/travelers/' + source._id + '/share/" target="_blank" data-toggle="tooltip" title="share the traveler" class="text-success"><i class="fa fa-users fa-lg"></i></a>';
+      return '<a href="' + basePath + '/travelers/' + source._id + '/share" target="_blank" data-toggle="tooltip" title="share the traveler" class="text-success"><i class="fa fa-users fa-lg"></i></a>';
     }
-    return '<a href="' + prefix + '/travelers/' + source._id + '/share/" target="_blank" data-toggle="tooltip" title="share the traveler"><i class="fa fa-users fa-lg"></i></a>';
+    return '<a href="' + basePath + '/travelers/' + source._id + '/share" target="_blank" data-toggle="tooltip" title="share the traveler"><i class="fa fa-users fa-lg"></i></a>';
   },
   bSortable: false
 };
@@ -448,7 +448,7 @@ var binderLinkColumn = {
       return '<a href="' + source.url + '" target="_blank" data-toggle="tooltip" title="go to the binder"><i class="fa fa-eye fa-lg"></i></a>';
     }
     if (source.hasOwnProperty('_id')) {
-      return '<a href="' + prefix + '/binders/' + source._id + '/" target="_blank" data-toggle="tooltip" title="go to the binder"><i class="fa fa-eye fa-lg"></i></a>';
+      return '<a href="' + basePath + '/binders/' + source._id + '" target="_blank" data-toggle="tooltip" title="go to the binder"><i class="fa fa-eye fa-lg"></i></a>';
     }
     return 'unknown';
   },
@@ -459,7 +459,7 @@ var binderConfigLinkColumn = {
   sTitle: '',
   mData: '_id',
   mRender: function (data, type, full) {
-    return '<a href="' + prefix + '/binders/' + data + '/config" target="_blank" data-toggle="tooltip" title="config the binder"><i class="fa fa-gear fa-lg"></i></a>';
+    return '<a href="' + basePath + '/binders/' + data + '/config" target="_blank" data-toggle="tooltip" title="config the binder"><i class="fa fa-gear fa-lg"></i></a>';
   },
   bSortable: false
 };
@@ -468,9 +468,9 @@ var binderShareLinkColumn = {
   sTitle: '',
   mData: function (source) {
     if (source.publicAccess >= 0) {
-      return '<a href="' + prefix + '/binders/' + source._id + '/share/" target="_blank" data-toggle="tooltip" title="share the binder" class="text-success"><i class="fa fa-users fa-lg"></i></a>';
+      return '<a href="' + basePath + '/binders/' + source._id + '/share" target="_blank" data-toggle="tooltip" title="share the binder" class="text-success"><i class="fa fa-users fa-lg"></i></a>';
     }
-    return '<a href="' + prefix + '/binders/' + source._id + '/share/" target="_blank" data-toggle="tooltip" title="share the binder"><i class="fa fa-users fa-lg"></i></a>';
+    return '<a href="' + basePath + '/binders/' + source._id + '/share" target="_blank" data-toggle="tooltip" title="share the binder"><i class="fa fa-users fa-lg"></i></a>';
   },
   bSortable: false
 };
@@ -479,7 +479,7 @@ var deviceTravelerLinkColumn = {
   sTitle: '',
   mData: 'inventoryId',
   mRender: function (data, type, full) {
-    return '<a href="' + prefix + '/currenttravelers/?device=' + data + '" target="_blank" data-toggle="tooltip" title="travelers for this device"><i class="fa fa-search fa-lg"></i></a>';
+    return '<a href="' + basePath + '/currenttravelers?device=' + data + '" target="_blank" data-toggle="tooltip" title="travelers for this device"><i class="fa fa-search fa-lg"></i></a>';
   },
   bSortable: false
 };
@@ -643,7 +643,7 @@ function usersColumn(title, prop) {
           if (type === 'filter' || type === 'sort') {
             return u.username;
           } else {
-            return '<a target="_blank" href="/users/' + u._id + '"><img class="user" data-src="holder.js/27x40?size=20&text=' + u._id.substr(0, 1).toUpperCase() + '" src="' + prefix + '/adusers/' + u._id + '/photo" title="' + u.username + '"></a>';
+            return '<a target="_blank" href="/users/' + u._id + '"><img class="user" data-src="holder.js/27x40?size=20&text=' + u._id.substr(0, 1).toUpperCase() + '" src="' + basePath + '/adusers/' + u._id + '/photo" title="' + u.username + '"></a>';
           }
         });
         if (type === 'filter' || type === 'sort') {
@@ -673,7 +673,7 @@ function usersFilteredColumn(title, filter) {
         if (type === 'filter' || type === 'sort') {
           return u.username;
         } else {
-          return '<a target="_blank" href="/users/' + u._id + '"><img class="user" data-src="holder.js/27x40?size=20&text=' + u._id.substr(0, 1).toUpperCase() + '" src="' + prefix + '/adusers/' + u._id + '/photo" title="' + u.username + '"></a>';
+          return '<a target="_blank" href="/users/' + u._id + '"><img class="user" data-src="holder.js/27x40?size=20&text=' + u._id.substr(0, 1).toUpperCase() + '" src="' + basePath + '/adusers/' + u._id + '/photo" title="' + u.username + '"></a>';
         }
       });
       if (type === 'filter' || type === 'sort') {
@@ -772,7 +772,7 @@ var userNameColumn = {
   mData: 'username',
   sDefaultContent: '',
   mRender: function (data, type, full) {
-    return '<a href = "' + prefix + '/users?name=' + data + '" target="_blank">' + data + '</a>';
+    return '<a href = "' + basePath + '/users?name=' + data + '" target="_blank">' + data + '</a>';
   },
   bFilter: true
 };
@@ -971,7 +971,7 @@ var cColumn = {
 };
 
 var oTableTools = {
-  sSwfPath: prefix ? prefix + '/datatables/swf/copy_csv_xls_pdf.swf' : '/datatables/swf/copy_csv_xls_pdf.swf',
+  sSwfPath: basePath + '/datatables/swf/copy_csv_xls_pdf.swf',
   aButtons: [
     'copy',
     'print', {

@@ -30,7 +30,6 @@ export function init(app: express.Application) {
       }
       return res.render('profile', {
         user: user,
-        prefix: '',
       });
     });
   });

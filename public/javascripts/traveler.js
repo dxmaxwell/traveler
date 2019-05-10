@@ -28,7 +28,7 @@ function fileHistory(found) {
   var link;
   if (found.length > 0) {
     for (i = 0; i < found.length; i += 1) {
-      link = prefix + '/data/' + found[i]._id;
+      link = basePath + '/data/' + found[i]._id;
       output = output + '<strong><a href=' + link + ' target="_blank">' + found[i].value + '</a></strong> uploaded by ' + found[i].inputBy + ' ' + livespan(found[i].inputOn) + '; ';
     }
   }
@@ -64,7 +64,7 @@ function dateSupport() {
 
 function setStatus(s) {
   $.ajax({
-    url: './status',
+    url: window.location.pathname + '/status',
     type: 'PUT',
     contentType: 'application/json',
     data: JSON.stringify({
@@ -98,7 +98,7 @@ function updateFinished(num) {
   finishedInput = num;
   $('#finished-input').text(num);
   $.ajax({
-    url: './finishedinput',
+    url: window.location.pathname + '/finishedinput',
     type: 'PUT',
     contentType: 'application/json',
     data: JSON.stringify({
@@ -157,7 +157,7 @@ function validation_message(form) {
 
 $(function () {
 
-  ajax401(prefix);
+  ajax401(basePath);
 
   createSideNav();
 
@@ -171,17 +171,17 @@ $(function () {
     var $this = $(this);
     if ($this.attr('name')) {
       if ($this.attr('src') === undefined) {
-        $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
+        $($this.attr('src', basePath + '/formfiles/' + $this.attr('name')));
         return;
       }
       if ($this.attr('src').indexOf('http') === 0) {
-        $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
+        $($this.attr('src', basePath + '/formfiles/' + $this.attr('name')));
         return;
       }
-      if (prefix && $this.attr('src').indexOf(prefix) !== 0) {
-        $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
-        return;
-      }
+      // if (prefix && $this.attr('src').indexOf(prefix) !== 0) {
+      //   $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
+      //   return;
+      // }
     }
   });
 
@@ -199,7 +199,7 @@ $(function () {
 
   function renderNotes() {
     $.ajax({
-      url: './notes',
+      url: window.location.pathname + '/notes',
       type: 'GET',
       dataType: 'json'
     }).done(function (data) {
@@ -239,7 +239,7 @@ $(function () {
       var value = $('#modal textarea[name="note-content"]').val();
       e.preventDefault();
       $.ajax({
-        url: './notes',
+        url: window.location.pathname + '/notes',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
@@ -283,7 +283,7 @@ $(function () {
   var realFinishedInput = 0;
 
   $.ajax({
-    url: './data',
+    url: window.location.pathname + '/data',
     type: 'GET',
     dataType: 'json'
   }).done(function (data) {
@@ -377,7 +377,7 @@ $(function () {
     var input = $this.closest('.control-group-wrap').find('input,textarea')[0];
     binder.serializeField(input);
     $.ajax({
-      url: './data',
+      url: window.location.pathname + '/data',
       type: 'POST',
       contentType: 'application/json',
       data: JSON.stringify({

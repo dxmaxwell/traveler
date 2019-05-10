@@ -10,7 +10,7 @@ function travelFromModal() {
   $('#modal .modal-body div.target').each(function () {
     var that = this;
     $.ajax({
-      url: '/travelers',
+      url: basePath + '/travelers',
       type: 'POST',
       contentType: 'application/json',
       data: JSON.stringify({
@@ -41,7 +41,7 @@ function cloneFromModal(formTable) {
     var that = this;
     var success = false;
     $.ajax({
-      url: '/forms/' + that.id + '/clone',
+      url: basePath + '/forms/' + that.id + '/clone',
       type: 'POST'
     }).done(function () {
       $(that).prepend('<i class="fa fa-check"></i>');
@@ -72,13 +72,13 @@ function formatItemUpdate(data) {
 }
 
 $(function () {
-  ajax401(prefix);
-  updateAjaxURL(prefix);
+  ajax401(basePath);
+  // updateAjaxURL(basePath);
   disableAjaxCache();
   /*form table starts*/
   var formAoColumns = [selectColumn, formLinkColumn, formShareLinkColumn, titleColumn, createdOnColumn, updatedOnColumn, updatedByColumn, sharedWithColumn, sharedGroupColumn];
   var formTable = $('#form-table').dataTable({
-    sAjaxSource: '/forms/json',
+    sAjaxSource: basePath + '/forms/json',
     sAjaxDataProp: '',
     fnInitComplete: function () {
       Holder.run({
@@ -109,7 +109,7 @@ $(function () {
   /*transferred form table starts*/
   var transferredFormAoColumns = [selectColumn, formLinkColumn, formShareLinkColumn, titleColumn, createdByColumn, createdOnColumn, transferredOnColumn, updatedOnColumn, updatedByColumn, sharedWithColumn, sharedGroupColumn];
   var transferredFormTable = $('#transferred-form-table').dataTable({
-    sAjaxSource: '/transferredforms/json',
+    sAjaxSource: basePath + '/transferredforms/json',
     sAjaxDataProp: '',
     fnInitComplete: function () {
       Holder.run({
@@ -140,7 +140,7 @@ $(function () {
   /*shared form table starts*/
   var sharedFormAoColumns = [selectColumn, formLinkColumn, titleColumn, ownerColumn, updatedByColumn, updatedOnColumn, sharedWithColumn, sharedGroupColumn];
   var sharedFormTable = $('#shared-form-table').dataTable({
-    sAjaxSource: '/sharedforms/json',
+    sAjaxSource: basePath + '/sharedforms/json',
     sAjaxDataProp: '',
     fnInitComplete: function () {
       Holder.run({
@@ -170,7 +170,7 @@ $(function () {
   /*group shared form table starts*/
   var groupSharedFormAoColumns = sharedFormAoColumns;
   var groupSharedFormTable = $('#group-shared-form-table').dataTable({
-    sAjaxSource: '/groupsharedforms/json',
+    sAjaxSource: basePath + '/groupsharedforms/json',
     sAjaxDataProp: '',
     fnInitComplete: function () {
       Holder.run({
@@ -200,7 +200,7 @@ $(function () {
   /*archieved form table starts*/
   var archivedFormAoColumns = [selectColumn, formLinkColumn, titleColumn, archivedOnColumn, sharedWithColumn, sharedGroupColumn];
   var archivedFormTable = $('#archived-form-table').dataTable({
-    sAjaxSource: '/archivedforms/json',
+    sAjaxSource: basePath + '/archivedforms/json',
     sAjaxDataProp: '',
     fnInitComplete: function () {
       Holder.run({
