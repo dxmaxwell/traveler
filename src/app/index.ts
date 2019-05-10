@@ -100,11 +100,11 @@ interface Config {
     [key: string]: string | undefined;
   };
   userphotos: {
-    root: {};
+    root?: {};
     maxAge: {};
   };
   uploads: {
-    root: {};
+    root?: {};
     maxSize: {};
   };
 }
@@ -268,12 +268,10 @@ async function doStart(): Promise<express.Application> {
       // no defaults
     },
     userphotos: {
-      root: path.join(__dirname, '..', 'userphoto'),
-      maxAge: 30 * 24 * 3600,            // 30 days
+      maxAge: 30 * 24 * 3600, // 30 days
     },
     uploads: {
-      root: path.join(__dirname, '..', 'uploads'),
-      maxSize: 10,                       // 10MB
+      maxSize: 10, // 10MB
     },
   };
 
@@ -425,6 +423,9 @@ async function doStart(): Promise<express.Application> {
   auth.setLDAPClient(adClient);
 
   // Configure the user photo cache directory
+  if (!cfg.userphotos.root) {
+    throw new Error(`User photo cache root directory path is required`);
+  }
   try {
     const finfo = await stat(String(cfg.userphotos.root));
     if (!finfo.isDirectory()) {
@@ -440,6 +441,9 @@ async function doStart(): Promise<express.Application> {
   info('User photo cache max age: %s', cfg.userphotos.maxAge);
 
   // Configure the file uploads directory
+  if (!cfg.uploads.root) {
+    throw new Error(`File uploads root directory path is required`);
+  }
   try {
     const finfo = await stat(String(cfg.uploads.root));
     if (!finfo.isDirectory()) {

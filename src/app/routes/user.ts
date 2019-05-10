@@ -416,7 +416,7 @@ export function init(app: express.Application) {
 
   app.get('/adusers/:id/photo', auth.ensureAuthenticated, (req, res) => {
     if (fs.existsSync(options.root + req.params.id + '.jpg')) {
-      return res.sendfile(req.params.id + '.jpg', options);
+      return res.sendFile(req.params.id + '.jpg', options);
     }
     const pending = pendingPhotos[req.params.id];
     if (pending) {

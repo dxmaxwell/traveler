@@ -199,7 +199,7 @@ $(function () {
 
   function renderNotes() {
     $.ajax({
-      url: './notes/',
+      url: './notes',
       type: 'GET',
       dataType: 'json'
     }).done(function (data) {
@@ -239,7 +239,7 @@ $(function () {
       var value = $('#modal textarea[name="note-content"]').val();
       e.preventDefault();
       $.ajax({
-        url: './notes/',
+        url: './notes',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
@@ -283,7 +283,7 @@ $(function () {
   var realFinishedInput = 0;
 
   $.ajax({
-    url: './data/',
+    url: './data',
     type: 'GET',
     dataType: 'json'
   }).done(function (data) {
@@ -377,7 +377,7 @@ $(function () {
     var input = $this.closest('.control-group-wrap').find('input,textarea')[0];
     binder.serializeField(input);
     $.ajax({
-      url: './data/',
+      url: './data',
       type: 'POST',
       contentType: 'application/json',
       data: JSON.stringify({
@@ -480,7 +480,7 @@ $(function () {
     data.append('type', input.type);
     data.append(input.name, input.files[0]);
     $.ajax({
-      url: './uploads/',
+      url: window.location.pathname + '/uploads',
       type: 'POST',
       processData: false,
       contentType: false, // important for jqXHR

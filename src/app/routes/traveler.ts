@@ -884,7 +884,7 @@ export function init(app: express.Application) {
       const filePath = data.file.path;
       fs.exists(filePath, (exists) => {
         if (exists) {
-          return res.sendfile(filePath);
+          return res.sendFile(filePath, { root: uploader.dest });
         }
         return res.status(410).send('gone');
       });

@@ -232,7 +232,7 @@ var FormLoader = (function (parent, $) {
 
   function retrieveData(cb) {
     $.ajax({
-      url: '/travelers/' + tid + '/data/',
+      url: '/travelers/' + tid + '/data',
       type: 'GET',
       dataType: 'json'
     }).done(function (json) {
@@ -243,7 +243,7 @@ var FormLoader = (function (parent, $) {
 
   function retrieveNotes(cb) {
     $.ajax({
-      url: '/travelers/' + tid + '/notes/',
+      url: '/travelers/' + tid + '/notes',
       type: 'GET',
       dataType: 'json'
     }).done(function (json) {

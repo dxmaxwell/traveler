@@ -61,7 +61,7 @@ function tagEvents() {
       confirmE.preventDefault();
       if (newTag) {
         $.ajax({
-          url: './tags/',
+          url: './tags',
           type: 'POST',
           contentType: 'application/json',
           data: JSON.stringify({
@@ -155,7 +155,7 @@ function removeWork(id, cb) {
 
 function updateWorks(updates, cb) {
   $.ajax({
-    url: './works/',
+    url: './works',
     type: 'PUT',
     contentType: 'application/json',
     data: JSON.stringify(updates)

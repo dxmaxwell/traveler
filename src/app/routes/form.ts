@@ -1,9 +1,11 @@
 /**
  * Implement Form route handlers
  */
+import * as path from 'path';
 
 import sanitize = require('@mapbox/sanitize-caja');
 
+import * as Debug from 'debug';
 import * as express from 'express';
 import * as mongoose from 'mongoose';
 
@@ -32,6 +34,8 @@ import {
 import {
   error,
 } from '../shared/logging';
+
+const debug = Debug('traveler:routes:form');
 
 let serviceUrl = '';
 
@@ -255,11 +259,13 @@ export function init(app: express.Application) {
       return res.status(400).send('Expected input name');
     }
 
+    debug('POST /forms/%s/uploads: File: { originalname:%s, path:%s }', req.params.id, req.file.originalname, req.file.path);
+
     const file = new FormFile({
       form: doc._id,
       value: req.file.originalname,
       file: {
-        path: req.file.path,
+        path: req.file.filename,
         encoding: req.file.encoding,
         mimetype: req.file.mimetype,
       },
@@ -282,8 +288,12 @@ export function init(app: express.Application) {
   app.get('/formfiles/:id', auth.ensureAuthenticated, reqUtils.exist('id', FormFile), (req, res) => {
     const data: FormFile = (req as any)[req.params.id];
     if (data.inputType === 'file' && data.file) {
-      return res.sendfile(data.file.path);
+      // Legacy records contain the absolute data file path, now use the base only!
+      const dataFilePath = path.resolve(uploader.dest, path.basename(data.file.path));
+      debug('GET /formfiles/%s: Send file with path: %s', req.params.id, dataFilePath);
+      return res.sendFile(dataFilePath);
     }
+    debug('GET /formfiles/%s: Form data is not a file: %s', req.params.id, data.inputType);
     return res.status(500).send('it is not a file');
   });
 

@@ -292,7 +292,7 @@ function figure_edit($cgr) {
     data.append('type', input.type);
     data.append(input.name, input.files[0]);
     $.ajax({
-      url: './uploads/',
+      url: window.location.pathname + '/uploads',
       type: 'POST',
       processData: false,
       contentType: false, // important for jqXHR

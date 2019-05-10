@@ -10,7 +10,7 @@ function travelFromModal() {
   $('#modal .modal-body div.target').each(function () {
     var that = this;
     $.ajax({
-      url: '/travelers/',
+      url: '/travelers',
       type: 'POST',
       contentType: 'application/json',
       data: JSON.stringify({

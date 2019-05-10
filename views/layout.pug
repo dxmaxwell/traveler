@@ -14,16 +14,16 @@ html
           .nav-collapse.collapse
             ul.nav
               li
-                a(href=basePath + '/forms/') Forms
+                a(href=basePath + '/forms') Forms
               li
-                a(href=basePath + '/travelers/') Travelers
+                a(href=basePath + '/travelers') Travelers
               li
-                a(href=basePath + '/binders/') Binders
+                a(href=basePath + '/binders') Binders
               li
-                a(href=basePath + '/docs/', target='_blank') Documents
+                a(href=basePath + '/docs', target='_blank') Documents
               if (locals.session && locals.session.userid && locals.session.roles && locals.session.roles.indexOf('admin') !== -1)
                 li
-                  a(href=basePath + '/admin/', target='_blank') Admin
+                  a(href=basePath + '/admin', target='_blank') Admin
             ul.nav.pull-right
               if (locals.session && locals.session.userid)
                 li

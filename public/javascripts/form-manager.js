@@ -31,7 +31,7 @@ function setAlias(fid, alias, updateTd) {
 
 function addForm(form, cb) {
   $.ajax({
-    url: './forms/',
+    url: './forms',
     type: 'POST',
     contentType: 'application/json',
     dataType: 'json',

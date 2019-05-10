@@ -108,7 +108,7 @@
   },
   "uploads": {
     // location of uploaded directory
-    //"root": "path/to/cache",
+    //"root": "path/to/storage",
     // Maximum file size (MB)
     //"maxSize": 10
   }

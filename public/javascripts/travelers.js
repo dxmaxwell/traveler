@@ -17,7 +17,7 @@ function cloneFromModal(travelerTable, sharedTravelerTable, groupSharedTravelerT
     var that = this;
     var success = false;
     $.ajax({
-      url: '/travelers/',
+      url: '/travelers',
       type: 'POST',
       contentType: 'application/json',
       data: JSON.stringify({
@@ -49,7 +49,7 @@ function addTravelers(travelers, binders) {
   var number = binders.length;
   binders.forEach(function (p) {
     $.ajax({
-      url: '/binders/' + p + '/',
+      url: '/binders/' + p,
       type: 'POST',
       contentType: 'application/json',
       data: JSON.stringify({

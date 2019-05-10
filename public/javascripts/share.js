@@ -172,7 +172,7 @@ function addto(data, table, list) {
       $('#message').append('<div class="alert alert-info"><button class="close" data-dismiss="alert">x</button><strong>' + name + '</strong> is already in the ' + list + ' share list. </div>');
     } else {
       $.ajax({
-        url: path + list + '/',
+        url: path + list,
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(data),

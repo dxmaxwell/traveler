@@ -121,7 +121,7 @@ export function getRouter(opts?: {}) {
         const filePath = data.file.path;
         fs.exists(filePath, (exists) => {
           if (exists) {
-            return res.sendfile(filePath);  // TODO: Path should relative to a configured root directory!
+            return res.sendFile(filePath);  // TODO: Path should relative to a configured root directory!
           }
           return res.status(410).send('gone');
         });

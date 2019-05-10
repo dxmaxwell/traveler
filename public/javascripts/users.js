@@ -124,7 +124,7 @@ $(function () {
       $('#message').append('<div class="alert alert-info"><button class="close" data-dismiss="alert">x</button>The user named <strong>' + name + '</strong> is already in the user list. </div>');
     } else {
       $.ajax({
-        url: '/users/',
+        url: '/users',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
