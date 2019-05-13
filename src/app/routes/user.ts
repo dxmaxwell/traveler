@@ -7,6 +7,7 @@ import * as express from 'express';
 
 import {
   error,
+  warn,
 } from '../shared/logging';
 
 import * as handlers from '../shared/handlers';
@@ -69,6 +70,41 @@ export function setLDAPClient(client: ldapjs.Client) {
   ldapClient = client;
 }
 
+let defaultUserPhotoData: Buffer | undefined;
+
+export function getDefaultUserPhotoData(): Buffer | undefined {
+  return defaultUserPhotoData;
+}
+
+export function setDefaultUserPhotoData(data: Buffer) {
+  defaultUserPhotoData = data;
+}
+
+let defaultUserPhotoType: string | undefined;
+
+export function getDefaultUserPhotoType(): string | undefined {
+  return defaultUserPhotoType;
+}
+
+export function setDefaultUserPhotoType(type: string) {
+  defaultUserPhotoType = type;
+}
+
+function sendUserPhotoWithDefault(res: Response, status: number, data?: string | string[] | Buffer | Buffer[]) {
+  if (!data) {
+    if (!defaultUserPhotoType || !defaultUserPhotoData) {
+      res.status(500).send('default user photo not specified');
+      return;
+    }
+    res.set('Content-Type', defaultUserPhotoType);
+    res.set('Cache-Control', 'public, max-age=' + options.maxAge);
+    res.status(status).send(defaultUserPhotoData);
+    return;
+  }
+  res.set('Content-Type', 'image/jpeg');
+  res.set('Cache-Control', 'public, max-age=' + options.maxAge);
+  return res.status(status).send(data);
+}
 
 function cleanList(id: string, f: (v: Response) => void) {
   const reslist = pendingPhotos[id];
@@ -87,40 +123,33 @@ function fetch_photo_from_ad(id: string) {
   };
   ldapClient.legacySearch(ad.searchBase, opts, true, (err, result) => {
     if (err) {
-      error(err);
+      error('LDAP error fetching photo: %s', err);
       cleanList(id, (res) => {
-        return res.status(500).send('ldap error');
+        sendUserPhotoWithDefault(res, 500);
       });
     } else if (!result || result.length === 0) {
       cleanList(id, (res) => {
-        return res.status(400).send(id + ' is not found');
+        sendUserPhotoWithDefault(res, 404);
       });
     } else if (result.length > 1) {
+      warn('Multiple LDAP results for user id: %s', id);
       cleanList(id, (res) => {
-        return res.status(400).send(id + ' is not unique!');
+        sendUserPhotoWithDefault(res, 500);
       });
     } else if (result[0].thumbnailPhoto && result[0].thumbnailPhoto.length) {
       if (!fs.existsSync(options.root + id + '.jpg')) {
         fs.writeFile(options.root + id + '.jpg', result[0].thumbnailPhoto, (fsErr) => {
           if (fsErr) {
-            error(fsErr);
+            error('Error writing user photo cache: %s', fsErr);
           }
-          cleanList(id, (res) => {
-            res.set('Content-Type', 'image/jpeg');
-            res.set('Cache-Control', 'public, max-age=' + options.maxAge);
-            return res.send(result[0].thumbnailPhoto);
-          });
-        });
-      } else {
-        cleanList(id, (res) => {
-          res.set('Content-Type', 'image/jpeg');
-          res.set('Cache-Control', 'public, max-age=' + options.maxAge);
-          return res.send(result[0].thumbnailPhoto);
         });
       }
+      cleanList(id, (res) => {
+        sendUserPhotoWithDefault(res, 200, result[0].thumbnailPhoto);
+      });
     } else {
       cleanList(id, (res) => {
-        return res.status(400).send(id + ' photo is not found');
+        sendUserPhotoWithDefault(res, 200);
       });
     }
   });

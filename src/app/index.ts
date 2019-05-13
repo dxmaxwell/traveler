@@ -127,6 +127,9 @@ export let error = logging.error;
 // application lifecycle
 const task = new tasks.StandardTask<express.Application>(doStart, doStop);
 
+// default photo data
+const defaultUserPhotoPath = path.resolve(__dirname, '..', 'public', 'images', 'photos', 'default.jpeg');
+
 // application activity
 const activeLimit = 100;
 const activeResponses = new Set<express.Response>();
@@ -460,6 +463,12 @@ async function doStart(): Promise<express.Application> {
   info('File uploads root: %s', cfg.uploads.root);
   info('File uploads max size: %s', cfg.uploads.maxSize);
 
+  // Default user photo configuration
+  const defaultUserPhotoType = 'image/jpeg';
+  const defaultUserPhotoData = await readFile(defaultUserPhotoPath);
+
+  user.setDefaultUserPhotoType(defaultUserPhotoType);
+  user.setDefaultUserPhotoData(defaultUserPhotoData);
 
   // view engine configuration
   app.set('views', path.resolve(__dirname, '..', 'views'));
