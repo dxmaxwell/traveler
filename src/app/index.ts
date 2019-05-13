@@ -468,6 +468,7 @@ async function doStart(): Promise<express.Application> {
 
   // Configure 'webenv' property and add to response locals
   const webenv = cfg.app.web_env || process.env.WEB_ENV || 'development';
+  info('Web environment: \'%s\'', webenv);
   app.set('webenv', webenv);
   app.use((req, res, next) => {
     res.locals.webenv = webenv;
