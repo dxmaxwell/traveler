@@ -2,10 +2,10 @@
 
 /*global clearInterval: false, clearTimeout: false, document: false, event: false, frames: false, history: false, Image: false, location: false, name: false, navigator: false, Option: false, parent: false, screen: false, setInterval: false, setTimeout: false, window: false, XMLHttpRequest: false, FormData: false */
 /*global sColumn, pColumn, vColumn, cColumn, travelerLinkColumn, aliasColumn, workProgressColumn, ownerColumn, deviceTagColumn, manPowerColumn, sDomNoTools*/
-/*global ajax401: false, updateAjaxURL: false, disableAjaxCache: false, prefix: false, Holder*/
+/*global ajax401: false, updateAjaxURL: false, disableAjaxCache: false, basePath: false, Holder*/
 
 $(function () {
-  // updateAjaxURL(prefix);
+  // updateAjaxURL(basePath);
   ajax401(basePath);
   disableAjaxCache();
 

@@ -1,5 +1,5 @@
 /*global clearInterval: false, clearTimeout: false, document: false, event: false, frames: false, history: false, Image: false, location: false, name: false, navigator: false, Option: false, parent: false, screen: false, setInterval: false, setTimeout: false, window: false, XMLHttpRequest: false, FormData: false */
-/*global moment: false, Binder: false, jsonPath: false, device: false, prefix: false, ajax401: false*/
+/*global moment: false, Binder: false, jsonPath: false, device: false, basePath: false, ajax401: false*/
 /*global selectColumn: false, formLinkColumn: false, titleColumn: false, createdOnColumn: false, updatedOnColumn: false, updatedByColumn: false, sharedWithColumn: false, fnAddFilterFoot: false, sDom: false, oTableTools: false, fnSelectAll: false, fnDeselect: false, createdByColumn: false, createdOnColumn: false, travelerConfigLinkColumn: false, travelerShareLinkColumn: false, travelerLinkColumn: false, statusColumn: false, deviceColumn: false, fnGetSelected: false, selectEvent: false, filterEvent: false, deadlineColumn: false, progressColumn: false*/
 
 function addData(oTable, url) {
@@ -114,10 +114,10 @@ $(function () {
   });
   currentTravelerTable.fnClearTable();
   if (device) {
-    addData(currentTravelerTable, prefix + '/currenttravelers/json?device=' + device);
+    addData(currentTravelerTable, basePath + '/currenttravelers/json?device=' + device);
     addExternalData(currentTravelerTable, 'https://controls.frib.msu.edu/traveler1/api.php?resource=travelers&device=' + device);
   } else {
-    addData(currentTravelerTable, prefix + '/currenttravelers/json');
+    addData(currentTravelerTable, basePath + '/currenttravelers/json');
     addExternalData(currentTravelerTable, 'https://controls.frib.msu.edu/traveler1/api.php?resource=travelers');
   }
   // binding events

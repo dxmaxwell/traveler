@@ -1,4 +1,4 @@
-/*global ajax401: false, prefix: false, updateAjaxURL: false, traveler: true, FormLoader: false, moment: false*/
+/*global ajax401: false, basePath: false, updateAjaxURL: false, traveler: true, FormLoader: false, moment: false*/
 /*global previewColumn: false, referenceFormLinkColumn: false, aliasColumn: false, activatedOnColumn: false, sDomClean: false, titleColumn: false, updatedOnColumn: false, formColumn: false, sDomPage: false, fnAddFilterFoot: false, filterEvent: false*/
 /*eslint max-nested-callbacks: [2, 4]*/
 
@@ -14,7 +14,7 @@ function findById(a, id) {
 
 function setAlias(fid, alias, updateTd) {
   $.ajax({
-    url: './forms/' + fid + '/alias',
+    url: window.location.pathname + '/forms/' + fid + '/alias',
     type: 'PUT',
     contentType: 'application/json',
     data: JSON.stringify({
@@ -31,7 +31,7 @@ function setAlias(fid, alias, updateTd) {
 
 function addForm(form, cb) {
   $.ajax({
-    url: './forms',
+    url: window.location.pathname + '/forms',
     type: 'POST',
     contentType: 'application/json',
     dataType: 'json',
@@ -47,7 +47,7 @@ function addForm(form, cb) {
 
 function setActive(fid, cb) {
   $.ajax({
-    url: './forms/active',
+    url: window.location.pathname + '/forms/active',
     type: 'PUT',
     contentType: 'application/json',
     dataType: 'json',
@@ -101,9 +101,9 @@ function initUsedForms(traveler, activeTable, usedTable) {
 
 $(function () {
 
-  ajax401(prefix);
+  ajax401(basePath);
 
-  updateAjaxURL(prefix);
+  // updateAjaxURL(basePath);
 
   var activeColumns = [previewColumn, aliasColumn, activatedOnColumn, referenceFormLinkColumn];
   var activeTable = $('#active-form').dataTable({

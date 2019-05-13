@@ -2,7 +2,7 @@
 
 /*global clearInterval: false, clearTimeout: false, document: false, event: false, frames: false, history: false, Image: false, location: false, name: false, navigator: false, Option: false, parent: false, screen: false, setInterval: false, setTimeout: false, window: false, XMLHttpRequest: false, FormData: false */
 /*global removeColumn, sequenceColumn, colorColumn, priorityColumn, valueColumn, travelerLinkColumn, aliasColumn, addedByColumn, addedOnColumn, ownerColumn, deviceTagColumn, sharedWithColumn, sharedGroupColumn, sDomNoTools*/
-/*global moment: false, ajax401: false, updateAjaxURL: false, disableAjaxCache: false, prefix: false, Holder*/
+/*global moment: false, ajax401: false, updateAjaxURL: false, disableAjaxCache: false, basePath: false, Holder*/
 
 function livespan(stamp) {
   return '<span data-livestamp="' + stamp + '"></span>';
@@ -15,7 +15,7 @@ function cleanTagForm() {
 
 function setStatus(s) {
   $.ajax({
-    url: './status',
+    url: window.location.pathname + '/status',
     type: 'PUT',
     contentType: 'application/json',
     data: JSON.stringify({
@@ -61,7 +61,7 @@ function tagEvents() {
       confirmE.preventDefault();
       if (newTag) {
         $.ajax({
-          url: './tags',
+          url: window.location.pathname + '/tags',
           type: 'POST',
           contentType: 'application/json',
           data: JSON.stringify({
@@ -85,7 +85,7 @@ function tagEvents() {
     e.preventDefault();
     var $that = $(this);
     $.ajax({
-      url: './tags/' + encodeURIComponent($that.siblings('span.tag').text()),
+      url: window.location.pathname + '/tags/' + encodeURIComponent($that.siblings('span.tag').text()),
       type: 'DELETE'
     }).done(function () {
       $that.closest('li').remove();
@@ -107,7 +107,7 @@ function editEvents(initValue) {
     var data = {};
     data[that.id] = value;
     $.ajax({
-      url: './config',
+      url: window.location.pathname + '/config',
       type: 'PUT',
       contentType: 'application/json',
       data: JSON.stringify(data),
@@ -140,7 +140,7 @@ function editEvents(initValue) {
 
 function removeWork(id, cb) {
   $.ajax({
-    url: './works/' + id,
+    url: window.location.pathname + '/works/' + id,
     type: 'DELETE'
   }).done(function () {
     $('#' + id).wrap('<del></del>');
@@ -155,7 +155,7 @@ function removeWork(id, cb) {
 
 function updateWorks(updates, cb) {
   $.ajax({
-    url: './works',
+    url: window.location.pathname + '/works',
     type: 'PUT',
     contentType: 'application/json',
     data: JSON.stringify(updates)
@@ -195,8 +195,8 @@ function getUpdate(element, updates, table) {
 }
 
 $(function () {
-  updateAjaxURL(prefix);
-  ajax401(prefix);
+  // updateAjaxURL(basePath);
+  ajax401(basePath);
   disableAjaxCache();
 
   $.livestamp.interval(30 * 1000);
@@ -216,7 +216,7 @@ $(function () {
   var works;
 
   var worksTable = $('#work-table').dataTable({
-    sAjaxSource: './works/json',
+    sAjaxSource: window.location.pathname + '/works/json',
     sAjaxDataProp: '',
     bAutoWidth: false,
     bPaginate: false,

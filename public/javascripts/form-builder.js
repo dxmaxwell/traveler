@@ -1,6 +1,6 @@
 /* global clearInterval: false, clearTimeout: false, document: false, event: false, frames: false, history: false, Image: false, location: false, name: false, navigator: false, Option: false, parent: false, screen: false, setInterval: false, setTimeout: false, window: false, XMLHttpRequest: false, FormData: false */
 
-/* global tinymce: false, rivets: false, UID: false, input: false, spec: false, ajax401: false, disableAjaxCache:false, prefix: false, updateAjaxURL: false */
+/* global tinymce: false, rivets: false, UID: false, input: false, spec: false, ajax401: false, disableAjaxCache:false, basePath: false, updateAjaxURL: false */
 
 /* eslint max-nested-callbacks: [2, 4], complexity: [2, 20] */
 
@@ -30,7 +30,7 @@ function sendRequest(data, cb, saveas) {
   var url;
   var type;
   if (saveas) {
-    url = prefix + '/forms/';
+    url = basePath + '/forms/';
     type = 'POST';
     data.id = id;
   } else {
@@ -867,7 +867,7 @@ function binding_events() {
 }
 
 $(function () {
-  // updateAjaxURL(prefix);
+  // updateAjaxURL(basePath);
   ajax401(basePath);
   disableAjaxCache();
 

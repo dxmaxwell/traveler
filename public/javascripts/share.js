@@ -1,5 +1,5 @@
 /*global clearInterval: false, clearTimeout: false, document: false, event: false, frames: false, history: false, Image: false, location: false, name: false, navigator: false, Option: false, parent: false, screen: false, setInterval: false, setTimeout: false, window: false, XMLHttpRequest: false, FormData: false */
-/*global prefix: false, ajax401: false, updateAjaxURL: false, disableAjaxCache: false, access: false, travelerGlobal: false*/
+/*global basePath: false, ajax401: false, updateAjaxURL: false, disableAjaxCache: false, access: false, travelerGlobal: false*/
 /*global selectColumn: false, useridColumn: false, userNameNoLinkColumn: false, groupNameColumn: false, accessColumn: false, fnGetSelected: false, selectEvent: false, filterEvent: false, sDomNoTools: false*/
 
 
@@ -29,7 +29,7 @@ function removeFromModal(list, cb) {
     ids.push(this.id);
   });
   $.ajax({
-    url: path + list + '/' + ids.join(),
+    url: path + '/' + list + '/' + ids.join(),
     type: 'DELETE',
     dataType: 'json'
   }).done(function (json) {
@@ -88,7 +88,7 @@ function modifyFromModal(list, cb) {
   $('#modal .modal-body div').each(function () {
     var that = this;
     $.ajax({
-      url: path + list + '/' + that.id,
+      url: path + '/' + list + '/' + that.id,
       type: 'PUT',
       contentType: 'application/json',
       processData: false,
@@ -172,7 +172,7 @@ function addto(data, table, list) {
       $('#message').append('<div class="alert alert-info"><button class="close" data-dismiss="alert">x</button><strong>' + name + '</strong> is already in the ' + list + ' share list. </div>');
     } else {
       $.ajax({
-        url: path + list,
+        url: path + '/' + list,
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(data),
@@ -195,8 +195,8 @@ function addto(data, table, list) {
 
 
 $(function () {
-  ajax401(prefix);
-  updateAjaxURL(prefix);
+  ajax401(basePath);
+  // updateAjaxURL(basePath);
   disableAjaxCache();
 
   if (typeof access !== 'undefined') {
@@ -220,7 +220,7 @@ $(function () {
       $('#message').append('<div class="alert alert-info"><button class="close" data-dismiss="alert">x</button>The setting is not changed.</div>');
     } else {
       $.ajax({
-        url: path + 'public',
+        url: path + '/public',
         type: 'PUT',
         contentType: 'application/json',
         data: JSON.stringify({

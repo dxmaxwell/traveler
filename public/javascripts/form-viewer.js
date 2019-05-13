@@ -1,4 +1,4 @@
-/*global prefix:false*/
+/*global basePath:false*/
 
 function createSideNav() {
   var $legend = $('legend');
@@ -57,17 +57,17 @@ $(function () {
     var $this = $(this);
     if ($this.attr('name')) {
       if ($this.attr('src') === undefined) {
-        $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
+        $($this.attr('src', basePath + '/formfiles/' + $this.attr('name')));
         return;
       }
       if ($this.attr('src').indexOf('http') === 0) {
-        $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
+        $($this.attr('src', basePath + '/formfiles/' + $this.attr('name')));
         return;
       }
-      if (prefix && $this.attr('src').indexOf(prefix) !== 0) {
-        $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
-        return;
-      }
+      // if (prefix && $this.attr('src').indexOf(prefix) !== 0) {
+      //   $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
+      //   return;
+      // }
     }
   });
 

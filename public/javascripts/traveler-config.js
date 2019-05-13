@@ -1,5 +1,5 @@
 /*global clearInterval: false, clearTimeout: false, document: false, event: false, frames: false, history: false, Image: false, location: false, name: false, navigator: false, Option: false, parent: false, screen: false, setInterval: false, setTimeout: false, window: false, XMLHttpRequest: false, FormData: false */
-/*global moment: false, ajax401: false, Modernizr: false, prefix: false, updateAjaxURL: false, disableAjaxCache: false, Bloodhound: false*/
+/*global moment: false, ajax401: false, Modernizr: false, basePath: false, updateAjaxURL: false, disableAjaxCache: false, Bloodhound: false*/
 
 function cleanDeviceForm() {
   $('#newDevice').closest('li').remove();
@@ -8,7 +8,7 @@ function cleanDeviceForm() {
 
 function setStatus(s) {
   $.ajax({
-    url: './status',
+    url: window.location.pathname + '/status',
     type: 'PUT',
     contentType: 'application/json',
     data: JSON.stringify({
@@ -26,8 +26,8 @@ function setStatus(s) {
 }
 
 $(function () {
-  ajax401(prefix);
-  updateAjaxURL(prefix);
+  ajax401(basePath);
+  // updateAjaxURL(basePath);
   disableAjaxCache();
   $('span.time').each(function () {
     $(this).text(moment($(this).text()).format('dddd, MMMM Do YYYY, h:mm:ss a'));
@@ -53,7 +53,7 @@ $(function () {
     var data = {};
     data[that.id] = value;
     $.ajax({
-      url: './config',
+      url: window.location.pathname + '/config',
       type: 'PUT',
       contentType: 'application/json',
       data: JSON.stringify(data),
@@ -97,7 +97,7 @@ $(function () {
     var $this = $(this);
     var $input = $this.closest('.form-inline').children('input').first();
     $.ajax({
-      url: './config',
+      url: window.location.pathname + '/config',
       type: 'PUT',
       contentType: 'application/json',
       data: JSON.stringify({
@@ -144,7 +144,7 @@ $(function () {
           return device.inventoryId;
         },
         prefetch: {
-          url: prefix + '/devices/json',
+          url: basePath + '/devices/json',
           cacheKey: 'devices'
         }
       });
@@ -166,7 +166,7 @@ $(function () {
       confirmE.preventDefault();
       if ($('#newDevice').val().trim()) {
         $.ajax({
-          url: './devices/',
+          url: window.location.pathname + '/devices',
           type: 'POST',
           contentType: 'application/json',
           data: JSON.stringify({
@@ -195,7 +195,7 @@ $(function () {
     e.preventDefault();
     var $that = $(this);
     $.ajax({
-      url: './devices/' + encodeURIComponent($that.siblings('span.device').text()),
+      url: window.location.pathname + '/devices/' + encodeURIComponent($that.siblings('span.device').text()),
       type: 'DELETE'
     }).done(function () {
       $that.closest('li').remove();

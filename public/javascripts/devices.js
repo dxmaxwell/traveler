@@ -1,9 +1,9 @@
-/*global deviceTravelerLinkColumn: false, serialColumn: false, typeColumn: false, descriptionColumn: false, fnAddFilterFoot: false, sDom: false, oTableTools: false, filterEvent: false, prefix: false*/
+/*global deviceTravelerLinkColumn: false, serialColumn: false, typeColumn: false, descriptionColumn: false, fnAddFilterFoot: false, sDom: false, oTableTools: false, filterEvent: false, basePath: false*/
 $(function () {
   var aoColumns = [deviceTravelerLinkColumn, serialColumn, typeColumn, descriptionColumn];
   fnAddFilterFoot('#device-table', aoColumns);
   $('#device-table').dataTable({
-    sAjaxSource: prefix + '/devices/json',
+    sAjaxSource: basePath + '/devices/json',
     sAjaxDataProp: '',
     aoColumns: aoColumns,
     bProcessing: true,

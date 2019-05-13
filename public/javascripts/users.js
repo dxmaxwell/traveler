@@ -1,5 +1,5 @@
 /*global selectColumn: false, useridColumn: false, fullNameNoLinkColumn: false, rolesColumn: false, lastVisitedOnColumn: false, fnGetSelected: false, selectEvent: false, filterEvent: false, sDomNoTools: false, fnAddFilterFoot: false*/
-/*global updateAjaxURL: false, prefix: false, Holder: false*/
+/*global updateAjaxURL: false, basePath: false, Holder: false*/
 /*global travelerGlobal: false*/
 
 function inArray(name, ao) {
@@ -71,7 +71,7 @@ function modifyFromModal(cb) {
 }
 
 $(function () {
-  // updateAjaxURL(prefix);
+  // updateAjaxURL(basePath);
 
   travelerGlobal.usernames.initialize();
 

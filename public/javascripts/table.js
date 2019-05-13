@@ -1,5 +1,5 @@
 /*global moment: false*/
-/*global prefix: false*/
+/*global basePath: false*/
 
 function formatDate(date) {
   return date ? moment(date).fromNow() : '';

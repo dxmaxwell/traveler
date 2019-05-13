@@ -1,4 +1,4 @@
-/*global updateAjaxURL: false, prefix: false, roles: true, moment: false*/
+/*global updateAjaxURL: false, basePath: false, roles: true, moment: false*/
 
 
 function update(roles) {
@@ -9,7 +9,7 @@ function update(roles) {
 }
 
 $(function () {
-  updateAjaxURL(prefix);
+  // updateAjaxURL(basePath);
 
   update(roles);
   $('#modify').click(function (e) {

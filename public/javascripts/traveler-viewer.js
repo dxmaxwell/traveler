@@ -1,5 +1,5 @@
 /*global clearInterval: false, clearTimeout: false, document: false, event: false, frames: false, history: false, Image: false, location: false, name: false, navigator: false, Option: false, parent: false, screen: false, setInterval: false, setTimeout: false, window: false, XMLHttpRequest: false, FormData: false */
-/*global moment: false, Binder: false, Modernizr: false, prefix: false*/
+/*global moment: false, Binder: false, Modernizr: false, basePath: false*/
 
 // temparary solution for the dirty forms
 function cleanForm() {
@@ -30,7 +30,7 @@ function fileHistory(found) {
     link;
   if (found.length > 0) {
     for (i = 0; i < found.length; i += 1) {
-      link = prefix + '/data/' + found[i]._id;
+      link = basePath + '/data/' + found[i]._id;
       output = output + '<strong><a href=' + link + ' target="_blank">' + found[i].value + '</a></strong> uploaded by ' + found[i].inputBy + ' ' + livespan(found[i].inputOn) + '; ';
     }
   }
@@ -106,7 +106,7 @@ function validation_message(form) {
 
 function renderNotes() {
   $.ajax({
-    url: './notes',
+    url: window.location.pathname + '/notes',
     type: 'GET',
     dataType: 'json'
   }).done(function (data, status, jqXHR) {
@@ -147,23 +147,23 @@ $(function () {
     var $this = $(this);
     if ($this.attr('name')) {
       if ($this.attr('src') === undefined) {
-        $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
+        $($this.attr('src', basePath + '/formfiles/' + $this.attr('name')));
         return;
       }
       if ($this.attr('src').indexOf('http') === 0) {
-        $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
+        $($this.attr('src', basePath + '/formfiles/' + $this.attr('name')));
         return;
       }
-      if (prefix && $this.attr('src').indexOf(prefix) !== 0) {
-        $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
-        return;
-      }
+      // if (prefix && $this.attr('src').indexOf(prefix) !== 0) {
+      //   $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
+      //   return;
+      // }
     }
   });
 
   var binder = new Binder.FormBinder(document.forms[0]);
   $.ajax({
-    url: './data',
+    url: window.location.pathname + '/data',
     type: 'GET',
     dataType: 'json'
   }).done(function (data, status, jqXHR) {

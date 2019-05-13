@@ -1,11 +1,11 @@
 /*global clearInterval: false, clearTimeout: false, document: false, event: false, frames: false, history: false, Image: false, location: false, name: false, navigator: false, Option: false, parent: false, screen: false, setInterval: false, setTimeout: false, window: false, XMLHttpRequest: false, FormData: false */
-/*global prefix: false, ajax401: false, updateAjaxURL: false, disableAjaxCache: false*/
+/*global basePath: false, ajax401: false, updateAjaxURL: false, disableAjaxCache: false*/
 /*global selectColumn: false, titleColumn: false, createdOnColumn: false, updatedOnColumn: false, updatedByColumn: false, sharedWithColumn: false, sharedGroupColumn: false, fnAddFilterFoot: false, sDomNoTools: false, createdByColumn: false, createdOnColumn: false, fnGetSelected: false, selectEvent: false, filterEvent: false, clonedByColumn: false, archivedOnColumn: false, binderConfigLinkColumn: false, binderShareLinkColumn: false, binderLinkColumn: false, tagsColumn: false, binderProgressColumn: false, transferredOnColumn: false, ownerColumn: false*/
 /*global archiveFromModal, transferFromModal, modalScroll*/
 
 $(function () {
   ajax401(basePath);
-  // updateAjaxURL(prefix);
+  // updateAjaxURL(basePath);
   disableAjaxCache();
   var publicBindersAoColumns = [binderLinkColumn, titleColumn, tagsColumn, ownerColumn, createdOnColumn, updatedByColumn, updatedOnColumn, binderProgressColumn];
   fnAddFilterFoot('#public-binders-table', publicBindersAoColumns);

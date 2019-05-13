@@ -1,4 +1,4 @@
-/*global moment: false, prefix: false, Binder: false*/
+/*global moment: false, basePath: false, Binder: false*/
 
 var FormLoader = (function (parent, $) {
   var data = null;
@@ -39,7 +39,7 @@ var FormLoader = (function (parent, $) {
     var link;
     if (found.length > 0) {
       for (i = 0; i < found.length; i += 1) {
-        link = prefix + '/data/' + found[i]._id;
+        link = basePath + '/data/' + found[i]._id;
         output = output + '<strong><a href=' + link + ' target="_blank">' + found[i].value + '</a></strong> uploaded by ' + found[i].inputBy + ' ' + moment(found[i].inputOn).fromNow() + '; ';
       }
     }
@@ -151,17 +151,17 @@ var FormLoader = (function (parent, $) {
       var $this = $(this);
       if ($this.attr('name')) {
         if ($this.attr('src') === undefined) {
-          $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
+          $($this.attr('src', basePath + '/formfiles/' + $this.attr('name')));
           return;
         }
         if ($this.attr('src').indexOf('http') === 0) {
-          $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
+          $($this.attr('src', basePath + '/formfiles/' + $this.attr('name')));
           return;
         }
-        if (prefix && $this.attr('src').indexOf(prefix) !== 0) {
-          $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
-          return;
-        }
+        // if (prefix && $this.attr('src').indexOf(prefix) !== 0) {
+        //   $($this.attr('src', prefix + '/formfiles/' + $this.attr('name')));
+        //   return;
+        // }
       }
     });
   }
@@ -232,7 +232,7 @@ var FormLoader = (function (parent, $) {
 
   function retrieveData(cb) {
     $.ajax({
-      url: '/travelers/' + tid + '/data',
+      url: basePath + '/travelers/' + tid + '/data',
       type: 'GET',
       dataType: 'json'
     }).done(function (json) {
@@ -243,7 +243,7 @@ var FormLoader = (function (parent, $) {
 
   function retrieveNotes(cb) {
     $.ajax({
-      url: '/travelers/' + tid + '/notes',
+      url: basePath + '/travelers/' + tid + '/notes',
       type: 'GET',
       dataType: 'json'
     }).done(function (json) {
@@ -258,7 +258,7 @@ var FormLoader = (function (parent, $) {
  */
   function retrieveForm(fid, cb) {
     $.ajax({
-      url: '/forms/' + fid + '/json',
+      url: basePath + '/forms/' + fid + '/json',
       type: 'GET',
       dataType: 'json',
       success: function (json) {
