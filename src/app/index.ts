@@ -549,8 +549,12 @@ async function doStart(): Promise<express.Application> {
   }));
 
   app.get('/login', auth.ensureAuthenticated, (req, res) => {
-    if (req.query.bounce) {
-      res.redirect(req.query.bounce);
+    if (!req.session) {
+      res.status(500).send('session missing');
+      return;
+    }
+    if (req.session.landing && req.session.landing !== req.url) {
+      res.redirect(res.locals.basePath + req.session.landing);
       return;
     }
     res.redirect(res.locals.basePath || '/');

@@ -196,6 +196,8 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
                   error(err3.message);
                 }
               });
+              next();
+              return;
             } else {
               // create a new user
               req.session.roles = [];
@@ -217,23 +219,16 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
                   return res.status(500).send('cannot log in. Please contact admin.');
                 }
                 info('A new user created : ' + newUser);
+
+                next();
+                return;
               });
             }
-            if (req.session.landing && req.session.landing !== '/login') {
-              // res.redirect(req.proxied ? url.resolve(auth.proxied_service + '/', '.' + req.session.landing) : req.session.landing);
-              res.redirect(req.session.landing);
-            } else {
-              // has a ticket but not landed before, must copy the ticket from somewhere ...
-              // res.redirect(req.proxied ? auth.proxied_service + '/' : '/');
-              res.redirect('/');
-            }
-            // halt.resume();
           });
         });
       } else {
-        error('CAS reject this ticket');
-        // return res.redirect(req.proxied ? auth.login_proxied_service : auth.login_service);
-        return res.redirect(authConfig.service);
+        error('CAS reject this ticket: ' + req.query.ticket);
+        return res.status(401).send('CAS rejected the ticket');
       }
     });
   } else {
@@ -246,9 +241,6 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
     } else {
       // set the landing, the first unauthenticated url
       req.session.landing = req.url;
-      // if (req.proxied) {
-      //   res.redirect(auth.proxied_cas + '/login?service=' + encodeURIComponent(auth.login_proxied_service));
-      // } else {
       res.redirect(authConfig.cas + '/login?service=' + encodeURIComponent(authConfig.service));
       // }
     }
