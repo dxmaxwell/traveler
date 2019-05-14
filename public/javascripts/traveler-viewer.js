@@ -106,7 +106,7 @@ function validation_message(form) {
 
 function renderNotes() {
   $.ajax({
-    url: window.location.pathname + '/notes',
+    url: './notes',
     type: 'GET',
     dataType: 'json'
   }).done(function (data, status, jqXHR) {
@@ -163,7 +163,7 @@ $(function () {
 
   var binder = new Binder.FormBinder(document.forms[0]);
   $.ajax({
-    url: window.location.pathname + '/data',
+    url: './data',
     type: 'GET',
     dataType: 'json'
   }).done(function (data, status, jqXHR) {
