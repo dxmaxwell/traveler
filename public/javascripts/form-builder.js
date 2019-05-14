@@ -812,6 +812,7 @@ function binding_events() {
       modalAlert('Save changes first', 'The form has been changed. Please save it before this action.');
       return;
     }
+    window.open(window.location.pathname + '/preview', '_blank');
   });
 
   $('#rename').click(function (e) {
