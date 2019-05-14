@@ -13,6 +13,7 @@
     "pug-lint": "pug-lint"
   },
   "dependencies": {
+    "@jcu/passport-cas": "^0.1.2",
     "@mapbox/sanitize-caja": "^0.1.4",
     "basic-auth": "^2.0.1",
     "body-parser": "^1.19.0",
@@ -28,7 +29,6 @@
     "express-validator": "^5.2.0",
     "file-stream-rotator": "^0.4.1",
     "http-status-codes": "^1.1.6",
-    "jade": "^1.11.0",
     "jstransformer-marked": "^1.0.3",
     "ldapjs": "^1.0.2",
     "method-override": "^3.0.0",
@@ -36,7 +36,6 @@
     "morgan": "^1.9.1",
     "multer": "^1.4.1",
     "passport": "^0.4.0",
-    "passport-cas": "^0.1.1",
     "passport-http": "^0.3.0",
     "pug": "^2.0.0-beta11",
     "rc": "^1.2.1",
