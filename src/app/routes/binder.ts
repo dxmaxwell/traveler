@@ -487,7 +487,7 @@ export function init(app: express.Application) {
     }
 
     if (s === 1) {
-      if (!p.status || [0, 2].indexOf(p.status) === -1) {
+      if (p.status === undefined || [0, 2].indexOf(p.status) === -1) {
         return res.status(400).send('invalid status change');
       } else {
         p.status = s;
@@ -495,7 +495,7 @@ export function init(app: express.Application) {
     }
 
     if (s === 2) {
-      if (!p.status || [1].indexOf(p.status) === -1) {
+      if (p.status === undefined || [1].indexOf(p.status) === -1) {
         return res.status(400).send('invalid status change');
       } else {
         p.status = s;
