@@ -140,7 +140,7 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
         return;
       }
       if (result.validated) {
-        const userid = result.username;
+        const userid = result.username.toLowerCase();
         // set userid in session
         req.session.userid = userid;
         const searchFilter = ad.searchFilter.replace('_id', userid);
