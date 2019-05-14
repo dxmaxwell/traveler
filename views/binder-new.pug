@@ -10,7 +10,7 @@ block head
 
 block content
   .container(style='margin-top: 10px')
-    form.form-horizontal(name='newbinder', action='./', method='POST')
+    form.form-horizontal(name='newbinder', action=basePath + '/binders', method='POST')
       .control-group
         .control-label Binder title
         .controls

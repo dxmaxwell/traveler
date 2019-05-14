@@ -15,7 +15,7 @@ function cleanTagForm() {
 
 function setStatus(s) {
   $.ajax({
-    url: window.location.pathname + '/status',
+    url: './status',
     type: 'PUT',
     contentType: 'application/json',
     data: JSON.stringify({
@@ -61,7 +61,7 @@ function tagEvents() {
       confirmE.preventDefault();
       if (newTag) {
         $.ajax({
-          url: window.location.pathname + '/tags',
+          url: './tags',
           type: 'POST',
           contentType: 'application/json',
           data: JSON.stringify({
@@ -85,7 +85,7 @@ function tagEvents() {
     e.preventDefault();
     var $that = $(this);
     $.ajax({
-      url: window.location.pathname + '/tags/' + encodeURIComponent($that.siblings('span.tag').text()),
+      url: './tags/' + encodeURIComponent($that.siblings('span.tag').text()),
       type: 'DELETE'
     }).done(function () {
       $that.closest('li').remove();
@@ -107,7 +107,7 @@ function editEvents(initValue) {
     var data = {};
     data[that.id] = value;
     $.ajax({
-      url: window.location.pathname + '/config',
+      url: './config',
       type: 'PUT',
       contentType: 'application/json',
       data: JSON.stringify(data),
@@ -140,7 +140,7 @@ function editEvents(initValue) {
 
 function removeWork(id, cb) {
   $.ajax({
-    url: window.location.pathname + '/works/' + id,
+    url: './works/' + id,
     type: 'DELETE'
   }).done(function () {
     $('#' + id).wrap('<del></del>');
@@ -155,7 +155,7 @@ function removeWork(id, cb) {
 
 function updateWorks(updates, cb) {
   $.ajax({
-    url: window.location.pathname + '/works',
+    url: './works',
     type: 'PUT',
     contentType: 'application/json',
     data: JSON.stringify(updates)
@@ -216,7 +216,7 @@ $(function () {
   var works;
 
   var worksTable = $('#work-table').dataTable({
-    sAjaxSource: window.location.pathname + '/works/json',
+    sAjaxSource: './works/json',
     sAjaxDataProp: '',
     bAutoWidth: false,
     bPaginate: false,
