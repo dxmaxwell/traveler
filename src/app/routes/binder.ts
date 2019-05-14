@@ -300,7 +300,7 @@ export function init(app: express.Application) {
         error(err);
         return res.status(500).send(err.message);
       }
-      const url = serviceUrl + '/binders/' + newPackage.id + '/';
+      const url = reqUtils.urijoin(serviceUrl, 'binders', newPackage.id);
 
       res.set('Location', url);
       return res.status(201).send('You can access the new binder at <a href="' + url + '">' + url + '</a>');

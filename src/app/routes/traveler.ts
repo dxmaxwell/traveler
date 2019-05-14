@@ -97,7 +97,8 @@ function createTraveler(form: Form, req: Request, res: Response) {
       return res.status(500).send(err.message);
     }
     info('new traveler ' + doc.id + ' created');
-    const url = serviceUrl + '/travelers/' + doc.id;
+    const url = reqUtils.urijoin(serviceUrl, 'travelers', doc.id);
+
     res.set('Location', url);
     return res.status(201).json({
       location: url,
@@ -165,8 +166,8 @@ function cloneTraveler(source: Traveler, req: Request, res: Response) {
         }
       });
     });
+    const url = reqUtils.urijoin(serviceUrl, 'travelers', doc.id);
 
-    const url = serviceUrl + '/travelers/' + doc.id + '/';
     res.set('Location', url);
     return res.status(201).json({
       location: url,
@@ -420,7 +421,7 @@ export function init(app: express.Application) {
   app.get('/travelers/:id', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), (req, res) => {
     const doc: Traveler = (req as any)[req.params.id];
     if (doc.archived) {
-      return res.redirect(serviceUrl + '/travelers/' + req.params.id + '/view');
+      return res.redirect(reqUtils.urijoin(serviceUrl, 'travelers', req.params.id, 'view'));
     }
 
     if (reqUtils.canWrite(req, doc)) {
@@ -432,7 +433,7 @@ export function init(app: express.Application) {
     }
 
     if (reqUtils.canRead(req, doc)) {
-      return res.redirect(serviceUrl + '/travelers/' + req.params.id + '/view');
+      return res.redirect(reqUtils.urijoin(serviceUrl, 'travelers', req.params.id, 'view'));
     }
 
     return res.status(403).send('You are not authorized to access this resource');
@@ -868,7 +869,8 @@ export function init(app: express.Application) {
           error(saveErr);
           return res.status(500).send(saveErr.message);
         }
-        const url = serviceUrl + '/data/' + data._id;
+        const url = reqUtils.urijoin(serviceUrl, 'data', data._id);
+
         res.set('Location', url);
         return res.status(201).json({
           location: url,

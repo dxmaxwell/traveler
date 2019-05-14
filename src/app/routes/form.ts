@@ -221,7 +221,7 @@ export function init(app: express.Application) {
     }
 
     if (form.archived) {
-      return res.redirect(serviceUrl + '/forms/' + req.params.id + '/preview');
+      return res.redirect(reqUtils.urijoin(serviceUrl, 'forms', req.params.id, 'preview'));
     }
 
     if (access === 1) {
@@ -233,7 +233,7 @@ export function init(app: express.Application) {
       });
     }
 
-    return res.redirect(serviceUrl + '/forms/' + req.params.id + '/preview');
+    return res.redirect(reqUtils.urijoin(serviceUrl, 'forms', req.params.id, 'preview'));
   });
 
   app.get('/forms/:id/json', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.canReadMw('id'), (req, res) => {
@@ -274,7 +274,8 @@ export function init(app: express.Application) {
         error(saveErr);
         return res.status(500).send(saveErr.message);
       }
-      const url = serviceUrl + '/formfiles/' + newfile.id;
+      const url = reqUtils.urijoin(serviceUrl, 'formfiles', newfile.id);
+
       res.set('Location', url);
       return res.status(201).send('The uploaded file is at <a target="_blank" href="' + url + '">' + url + '</a>');
     });
@@ -458,7 +459,7 @@ export function init(app: express.Application) {
         error(err);
         return res.status(500).send(err.message);
       }
-      const url = serviceUrl + '/forms/' + newform.id + '/';
+      const url = reqUtils.urijoin(serviceUrl, 'forms', newform.id);
 
       res.set('Location', url);
       return res.status(201).send('You can see the new form at <a href="' + url + '">' + url + '</a>');
@@ -490,7 +491,8 @@ export function init(app: express.Application) {
         error(saveErr);
         return res.status(500).send(saveErr.message);
       }
-      const url = serviceUrl + '/forms/' + newform.id + '/';
+      const url = reqUtils.urijoin(serviceUrl, 'forms', newform.id);
+
       res.set('Location', url);
       return res.status(201).send('You can see the new form at <a href="' + url + '">' + url + '</a>');
     });

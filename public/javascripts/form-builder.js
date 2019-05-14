@@ -30,7 +30,7 @@ function sendRequest(data, cb, saveas) {
   var url;
   var type;
   if (saveas) {
-    url = basePath + '/forms/';
+    url = basePath + '/forms';
     type = 'POST';
     data.id = id;
   } else {

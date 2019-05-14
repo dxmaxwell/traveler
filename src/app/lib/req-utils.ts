@@ -1,12 +1,14 @@
 /**
  * Utilities for handling requests
  */
+import * as path from 'path';
 
 import sanitizeCaja = require('@mapbox/sanitize-caja');
 
 import * as express from 'express';
 import * as mongoose from 'mongoose';
 import * as _ from 'underscore';
+import * as URI from 'uri-js';
 
 import {
   error,
@@ -296,4 +298,25 @@ export function getSharedGroup(sharedGroup: Array<{ _id?: ObjectId, groupname: s
     }
   }
   return -1;
+}
+
+export function urijoin(...uris: string[]): string {
+  let base: URI.URIComponents | undefined;
+  for (const uri of uris) {
+    const u = URI.parse(uri);
+    if (!base) {
+      base = u;
+      continue;
+    }
+    base.path = path.posix.join(base.path, u.path);
+    if (base.query && u.query) {
+      base.query = base.query + '&' + u.query;
+    } else {
+      base.query = base.query || u.query;
+    }
+  }
+  if (!base) {
+    return '';
+  }
+  return URI.serialize(base);
 }
