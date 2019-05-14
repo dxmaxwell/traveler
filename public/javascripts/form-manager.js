@@ -14,7 +14,7 @@ function findById(a, id) {
 
 function setAlias(fid, alias, updateTd) {
   $.ajax({
-    url: window.location.pathname + '/forms/' + fid + '/alias',
+    url: './forms/' + fid + '/alias',
     type: 'PUT',
     contentType: 'application/json',
     data: JSON.stringify({
@@ -31,7 +31,7 @@ function setAlias(fid, alias, updateTd) {
 
 function addForm(form, cb) {
   $.ajax({
-    url: window.location.pathname + '/forms',
+    url: './forms',
     type: 'POST',
     contentType: 'application/json',
     dataType: 'json',
@@ -47,7 +47,7 @@ function addForm(form, cb) {
 
 function setActive(fid, cb) {
   $.ajax({
-    url: window.location.pathname + '/forms/active',
+    url: './forms/active',
     type: 'PUT',
     contentType: 'application/json',
     dataType: 'json',
@@ -128,7 +128,7 @@ $(function () {
   var availableColumns = [previewColumn, titleColumn, updatedOnColumn, formColumn];
   fnAddFilterFoot('#available-forms', availableColumns);
   var availableTable = $('#available-forms').dataTable({
-    sAjaxSource: '/forms/json',
+    sAjaxSource: basePath + '/forms/json',
     sAjaxDataProp: '',
     bProcessing: true,
     oLanguage: {

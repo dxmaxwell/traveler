@@ -8,7 +8,7 @@ function cleanDeviceForm() {
 
 function setStatus(s) {
   $.ajax({
-    url: window.location.pathname + '/status',
+    url: './status',
     type: 'PUT',
     contentType: 'application/json',
     data: JSON.stringify({
@@ -53,7 +53,7 @@ $(function () {
     var data = {};
     data[that.id] = value;
     $.ajax({
-      url: window.location.pathname + '/config',
+      url: './config',
       type: 'PUT',
       contentType: 'application/json',
       data: JSON.stringify(data),
@@ -97,7 +97,7 @@ $(function () {
     var $this = $(this);
     var $input = $this.closest('.form-inline').children('input').first();
     $.ajax({
-      url: window.location.pathname + '/config',
+      url: './config',
       type: 'PUT',
       contentType: 'application/json',
       data: JSON.stringify({
@@ -166,7 +166,7 @@ $(function () {
       confirmE.preventDefault();
       if ($('#newDevice').val().trim()) {
         $.ajax({
-          url: window.location.pathname + '/devices',
+          url: './devices',
           type: 'POST',
           contentType: 'application/json',
           data: JSON.stringify({
@@ -195,7 +195,7 @@ $(function () {
     e.preventDefault();
     var $that = $(this);
     $.ajax({
-      url: window.location.pathname + '/devices/' + encodeURIComponent($that.siblings('span.device').text()),
+      url: './devices/' + encodeURIComponent($that.siblings('span.device').text()),
       type: 'DELETE'
     }).done(function () {
       $that.closest('li').remove();
