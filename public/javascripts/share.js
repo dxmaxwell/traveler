@@ -8,7 +8,7 @@ var path = window.location.pathname;
 
 function initTable(list, oTable) {
   $.ajax({
-    url: path + list + '/json',
+    url: path + '/' + list + '/json',
     type: 'GET',
     dataType: 'json'
   }).done(function (json) {

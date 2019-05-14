@@ -8,6 +8,8 @@ import {
   error,
 } from '../shared/logging';
 
+import * as models from '../shared/models';
+
 import * as ldapjs from './ldap-client';
 
 import {
@@ -106,7 +108,7 @@ function addUserFromAD(req: Request, res: Response, doc: SharedDocument) {
         phone: result[0].telephoneNumber,
         mobile: result[0].mobile,
       });
-      switch (doc.modelName) {
+      switch (models.getModelName(doc)) {
       case 'Form':
         user.forms = [doc._id];
         break;
@@ -117,7 +119,7 @@ function addUserFromAD(req: Request, res: Response, doc: SharedDocument) {
         user.binders = [doc._id];
         break;
       default:
-        error('Something is wrong with doc type ' + doc.modelName);
+        error('Something is wrong with doc type ' + models.getModelName(doc));
       }
       user.save((userErr) => {
         if (userErr) {
@@ -172,7 +174,7 @@ function addGroupFromAD(req: Request, res: Response, doc: SharedDocument) {
         name: result[0].displayName,
         email: result[0].mail,
       });
-      switch (doc.modelName) {
+      switch (models.getModelName(doc)) {
       case 'Form':
         group.forms = [doc._id];
         break;
@@ -183,7 +185,7 @@ function addGroupFromAD(req: Request, res: Response, doc: SharedDocument) {
         group.binders = [doc._id];
         break;
       default:
-        error('Something is wrong with doc type ' + doc.modelName);
+        error('Something is wrong with doc type ' + models.getModelName(doc));
       }
       group.save((groupErr) => {
         if (groupErr) {
@@ -223,7 +225,7 @@ function addUser(req: Request, res: Response, doc: SharedDocument) {
         return res.status(201).json('The user named ' + name + ' was added to the share list.');
       });
       const addToSet: AddToSet = {};
-      switch (doc.modelName) {
+      switch (models.getModelName(doc)) {
       case 'Form':
         addToSet.forms = doc._id;
         break;
@@ -234,7 +236,7 @@ function addUser(req: Request, res: Response, doc: SharedDocument) {
         addToSet.binders = doc._id;
         break;
       default:
-        error('Something is wrong with doc type ' + doc.modelName);
+        error('Something is wrong with doc type ' + models.getModelName(doc));
       }
       user.update({
         $addToSet: addToSet,
@@ -277,7 +279,7 @@ function addGroup(req: Request, res: Response, doc: SharedDocument) {
         return res.status(201).json('The group ' + id + ' was added to the share list.');
       });
       const addToSet: AddToSet = {};
-      switch (doc.modelName) {
+      switch (models.getModelName(doc)) {
       case 'Form':
         addToSet.forms = doc._id;
         break;
@@ -288,7 +290,7 @@ function addGroup(req: Request, res: Response, doc: SharedDocument) {
         addToSet.binders = doc._id;
         break;
       default:
-        error('Something is wrong with doc type ' + doc.modelName);
+        error('Something is wrong with doc type ' + models.getModelName(doc));
       }
       group.update({
         $addToSet: addToSet,
@@ -343,7 +345,7 @@ function removeFromList(req: Request, res: Response, doc: SharedDocument) {
     }
 
     const pull: AddToSet = {};
-    switch (doc.modelName) {
+    switch (models.getModelName(doc)) {
     case 'Form':
       pull.forms = doc._id;
       break;
@@ -354,7 +356,7 @@ function removeFromList(req: Request, res: Response, doc: SharedDocument) {
       pull.binders = doc._id;
       break;
     default:
-      error('Something is wrong with doc type ' + doc.modelName);
+      error('Something is wrong with doc type ' + models.getModelName(doc));
     }
 
     removed.forEach((id) => {
@@ -382,8 +384,8 @@ function removeFromList(req: Request, res: Response, doc: SharedDocument) {
  * @return {undefined}
  */
 export function addShare(req: Request, res: Response, doc: SharedDocument) {
-  if (['Form', 'Traveler', 'Binder'].indexOf(doc.modelName) === -1) {
-    return res.status(500).json('cannot handle the document type ' + doc.modelName);
+  if (['Form', 'Traveler', 'Binder'].indexOf(models.getModelName(doc)) === -1) {
+    return res.status(500).json('cannot handle the document type ' + models.getModelName(doc));
   }
   if (req.params.list === 'users') {
     addUser(req, res, doc);
@@ -402,8 +404,8 @@ export function addShare(req: Request, res: Response, doc: SharedDocument) {
  * @return {undefined}
  */
 export function removeShare(req: Request, res: Response, doc: SharedDocument) {
-  if (['Form', 'Traveler', 'Binder'].indexOf(doc.modelName) === -1) {
-    return res.status(500).json('cannot handle the document type ' + doc.modelName);
+  if (['Form', 'Traveler', 'Binder'].indexOf(models.getModelName(doc)) === -1) {
+    return res.status(500).json('cannot handle the document type ' + models.getModelName(doc));
   }
 
   removeFromList(req, res, doc);
