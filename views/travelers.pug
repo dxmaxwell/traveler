@@ -28,14 +28,6 @@ block content
         a.btn.btn-info#all-travelers(href=basePath + '/publictravelers/', target='_blank', data-toggle='tooltip', title='see all public travelers')
           i.fa.fa-institution.fa-lg
           | &nbsp;All public travelers
-      .btn-group.dropdown
-        a.btn.btn-info.dropdown-toggle#ref(data-toggle='dropdown')
-          i.fa.fa-gears.fa-lg
-          | &nbsp;References
-          span.caret
-        ul.dropdown-menu
-          li#devices
-            a(href=basePath + '/devices/', target='_blank') Devices in CCDB
     #message
     .modal.hide.fade#modal(tabindex='-1', role='dialog', data-backdrop='static', aria-labelledby='modalLabel', aria-hidden='true')
       .modal-header

@@ -122,8 +122,6 @@ $(function () {
     $this.parent().remove();
   });
 
-  var devices;
-
   $('#add').click(function (e) {
     e.preventDefault();
     // add an input and a button add
@@ -132,34 +130,6 @@ $(function () {
     $('#cancel').click(function (cancelE) {
       cancelE.preventDefault();
       cleanDeviceForm();
-    });
-
-    if (!devices) {
-      devices = new Bloodhound({
-        datumTokenizer: function (device) {
-          return Bloodhound.tokenizers.nonword(device.inventoryId);
-        },
-        queryTokenizer: Bloodhound.tokenizers.nonword,
-        identify: function (device) {
-          return device.inventoryId;
-        },
-        prefetch: {
-          url: basePath + '/devices/json',
-          cacheKey: 'devices'
-        }
-      });
-      devices.initialize();
-    }
-
-    $('#newDevice').typeahead({
-      minLength: 1,
-      highlight: true,
-      hint: true
-    }, {
-      name: 'devices',
-      limit: 20,
-      display: 'inventoryId',
-      source: devices
     });
 
     $('#confirm').click(function (confirmE) {

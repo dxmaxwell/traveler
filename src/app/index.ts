@@ -37,7 +37,6 @@ import * as share from './lib/share';
 import * as admin from './routes/admin';
 import * as api from './routes/api';
 import * as binder from './routes/binder';
-// import device from './routes/device';
 import * as doc from './routes/doc';
 import * as form from './routes/form';
 import * as profile from './routes/profile';
@@ -618,8 +617,6 @@ async function doStart(): Promise<express.Application> {
   user.init(app);
 
   profile.init(app);
-
-  // device(app);  // Provides devices from external service (ie CCDB)
 
   doc.init(app);
 
