@@ -492,6 +492,7 @@ async function doStart(): Promise<express.Application> {
       fileSize: Number(cfg.uploads.maxSize) * 1024 * 1024,
     },
   });
+  api.setUploader(uploader);
   form.setUploader(uploader);
   traveler.setUploader(uploader);
 

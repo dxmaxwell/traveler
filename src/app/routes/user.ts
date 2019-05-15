@@ -236,7 +236,7 @@ function addUser(req: Request, res: Response) {
         error(err);
         return res.status(500).send(err.message);
       }
-      const url = reqUtils.urijoin(serviceUrl, 'users', newUser._id);
+      const url = reqUtils.urijoin(serviceUrl, 'users', newUser.id);
 
       res.set('Location', url);
       return res.status(201).send('The new user is at <a target="_blank" href="' + url + '">' + url + '</a>');
@@ -291,7 +291,7 @@ export function init(app: express.Application) {
         return res.status(500).send(err.message);
       }
       if (user) {
-        const url = reqUtils.urijoin(serviceUrl, 'users', user._id);
+        const url = reqUtils.urijoin(serviceUrl, 'users', user.id);
         return res.status(200).send('The user is at <a target="_blank" href="' + url + '">' + url + '</a>');
       }
       addUser(req, res);

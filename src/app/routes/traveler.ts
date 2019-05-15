@@ -3,7 +3,9 @@
  */
 
 import * as fs from 'fs';
+import * as path from 'path';
 
+import * as Debug from 'debug';
 import * as express from 'express';
 import * as mongoose from 'mongoose';
 
@@ -16,6 +18,7 @@ import * as handlers from '../shared/handlers';
 import {
   error,
   info,
+  warn,
 } from '../shared/logging';
 
 import * as reqUtils from '../lib/req-utils';
@@ -44,6 +47,8 @@ import {
 
 type Request = express.Request;
 type Response = express.Response;
+
+const debug = Debug('traveler:routes:traveler');
 
 let serviceUrl = '';
 
@@ -843,7 +848,7 @@ export function init(app: express.Application) {
       name: req.body.name,
       value: req.file.originalname,
       file: {
-        path: req.file.path,
+        path: req.file.filename,
         encoding: req.file.encoding,
         mimetype: req.file.mimetype,
       },
@@ -869,7 +874,7 @@ export function init(app: express.Application) {
           error(saveErr);
           return res.status(500).send(saveErr.message);
         }
-        const url = reqUtils.urijoin(serviceUrl, 'data', data._id);
+        const url = reqUtils.urijoin(serviceUrl, 'data', data.id);
 
         res.set('Location', url);
         return res.status(201).json({
@@ -882,11 +887,14 @@ export function init(app: express.Application) {
   app.get('/data/:id', auth.ensureAuthenticated, reqUtils.exist('id', TravelerData), (req, res) => {
     const data: TravelerData = (req as any)[req.params.id];
     if (data.inputType === 'file' && data.file) {
-      const filePath = data.file.path;
-      fs.exists(filePath, (exists) => {
+      // Legacy records contain the absolute data file path, now use the base only!
+      const dataFilePath = path.resolve(uploader.dest, path.basename(data.file.path));
+      fs.exists(dataFilePath, (exists) => {
         if (exists) {
-          return res.sendFile(filePath, { root: uploader.dest });
+          debug('GET /data/%s: Send file with path: %s', req.params.id, dataFilePath);
+          return res.sendFile(dataFilePath);
         }
+        warn('GET /data/%s: File does not exist: %s', req.params.id, dataFilePath);
         return res.status(410).send('gone');
       });
     } else {

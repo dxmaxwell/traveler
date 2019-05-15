@@ -3,10 +3,13 @@
  */
 
 import * as fs from 'fs';
+import * as path from 'path';
 
+import * as Debug from 'debug';
 import * as express from 'express';
 
 import * as auth from '../lib/auth';
+import * as Uploader from '../lib/uploader';
 
 import {
   Traveler,
@@ -16,8 +19,16 @@ import {
 
 import {
   error,
+  warn,
 } from '../shared/logging';
 
+const debug = Debug('traveler:routes:api');
+
+let uploader: Uploader.Instance;
+
+export function setUploader(u: Uploader.Instance) {
+  uploader = u;
+}
 
 let router: express.Router | null = null;
 
@@ -115,14 +126,17 @@ export function getRouter(opts?: {}) {
         return res.status(500).send(err.message);
       }
       if (!data) {
-        return res.status(410).send('gone');
+        return res.status(404).send('not found');
       }
       if (data.inputType === 'file' && data.file) {
-        const filePath = data.file.path;
-        fs.exists(filePath, (exists) => {
+        // Legacy records contain the absolute data file path, now use the base only!
+        const dataFilePath = path.resolve(uploader.dest, path.basename(data.file.path));
+        fs.exists(dataFilePath, (exists) => {
           if (exists) {
-            return res.sendFile(filePath);  // TODO: Path should relative to a configured root directory!
+            debug('GET /data/%s: Send file with path: %s', req.params.id, dataFilePath);
+            return res.sendFile(dataFilePath);
           }
+          warn('GET /data/%s: File does not exist: %s', req.params.id, dataFilePath);
           return res.status(410).send('gone');
         });
       } else {
