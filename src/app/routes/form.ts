@@ -321,7 +321,7 @@ export function init(app: express.Application) {
     }
     access = Number(access);
     if (form.publicAccess === access) {
-      return res.send(204);
+      return res.sendStatus(204);
     }
     form.publicAccess = access;
     form.save((saveErr) => {
@@ -501,7 +501,7 @@ export function init(app: express.Application) {
   app.put('/forms/:id/archived', auth.ensureAuthenticated, reqUtils.exist('id', Form), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['archived']), (req, res) => {
     const doc: Form = (req as any)[req.params.id];
     if (doc.archived === req.body.archived) {
-      return res.send(204);
+      return res.sendStatus(204);
     }
 
     doc.archived = req.body.archived;
@@ -564,7 +564,7 @@ export function init(app: express.Application) {
 
     // no change
     if (f.status === s) {
-      return res.send(204);
+      return res.sendStatus(204);
     }
 
     if (s === 0) {

@@ -55,7 +55,7 @@ export function init(app: express.Application) {
           error: err.message,
         });
       }
-      return res.send(204);
+      return res.sendStatus(204);
     });
   });
 }

@@ -439,7 +439,7 @@ export function changeOwner(req: Request, res: Response, doc: SharedDocument) {
     const id = String(result[0].sAMAccountName).toLowerCase();
 
     if (doc.owner === id) {
-      return res.send(204);
+      return res.sendStatus(204);
     }
 
     doc.owner = id;

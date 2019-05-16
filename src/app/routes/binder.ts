@@ -96,7 +96,7 @@ export function init(app: express.Application) {
         error(saveErr);
         return res.status(500).send(saveErr.message);
       }
-      return res.send(204);
+      return res.sendStatus(204);
     });
   });
 
@@ -113,7 +113,7 @@ export function init(app: express.Application) {
         error(saveErr);
         return res.status(500).send(saveErr.message);
       }
-      return res.send(204);
+      return res.sendStatus(204);
     });
   });
 
@@ -134,7 +134,7 @@ export function init(app: express.Application) {
         error(saveErr);
         return res.status(500).send(saveErr.message);
       }
-      return res.send(204);
+      return res.sendStatus(204);
     });
   });
 
@@ -157,7 +157,7 @@ export function init(app: express.Application) {
     }
     access = Number(access);
     if (binder.publicAccess === access) {
-      return res.send(204);
+      return res.sendStatus(204);
     }
     binder.publicAccess = access;
     binder.save((saveErr) => {
@@ -440,7 +440,7 @@ export function init(app: express.Application) {
   app.put('/binders/:id/archived', auth.ensureAuthenticated, reqUtils.exist('id', Binder), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['archived']), (req, res) => {
     const doc: Binder = (req as any)[req.params.id];
     if (doc.archived === req.body.archived) {
-      return res.send(204);
+      return res.sendStatus(204);
     }
 
     doc.archived = req.body.archived;
@@ -483,7 +483,7 @@ export function init(app: express.Application) {
     }
 
     if (p.status === s) {
-      return res.send(204);
+      return res.sendStatus(204);
     }
 
     if (s === 1) {
@@ -602,14 +602,14 @@ export function init(app: express.Application) {
     let model: mongoose.Model<Traveler | Binder>;
     if (tids) {
       if (tids.length === 0) {
-        return res.send(204);
+        return res.sendStatus(204);
       }
       type = 'traveler';
       model = Traveler;
       ids = tids;
     } else {
       if (!pids || pids.length === 0) {
-        return res.send(204);
+        return res.sendStatus(204);
       }
       type = 'binder';
       model = Binder;
@@ -630,7 +630,7 @@ export function init(app: express.Application) {
       }
 
       if (items.length === 0) {
-        return res.send(204);
+        return res.sendStatus(204);
       }
 
       if (!req.session) {
@@ -688,7 +688,7 @@ export function init(app: express.Application) {
       }
 
       if (added.length === 0) {
-        return res.send(204);
+        return res.sendStatus(204);
       }
 
       p.updatedOn = new Date();
@@ -770,7 +770,7 @@ export function init(app: express.Application) {
     }
 
     if (!binder.isModified()) {
-      return res.send(204);
+      return res.sendStatus(204);
     }
 
     const cb = (err: any, newWP: Binder): void => {

@@ -457,7 +457,7 @@ export function init(app: express.Application) {
   app.put('/travelers/:id/archived', auth.ensureAuthenticated, reqUtils.exist('id', Traveler), reqUtils.isOwnerMw('id'), reqUtils.filter('body', ['archived']), (req, res) => {
     const doc: Traveler = (req as any)[req.params.id];
     if (doc.archived === req.body.archived) {
-      return res.send(204);
+      return res.sendStatus(204);
     }
 
     doc.archived = req.body.archived;
@@ -571,7 +571,7 @@ export function init(app: express.Application) {
         error(e);
         return res.status(500).send(e.message);
       }
-      return res.send(204);
+      return res.sendStatus(204);
     });
   });
 
@@ -615,7 +615,7 @@ export function init(app: express.Application) {
     }
 
     if (doc.status === req.body.status) {
-      return res.send(204);
+      return res.sendStatus(204);
     }
 
     if (req.body.status !== 1.5 && !reqUtils.isOwner(req, doc)) {
@@ -680,7 +680,7 @@ export function init(app: express.Application) {
     doc.updatedOn = new Date();
     const added = doc.devices.addToSet(newdevice);
     if (added.length === 0) {
-      return res.send(204);
+      return res.sendStatus(204);
     }
     doc.save((saveErr) => {
       if (saveErr) {
@@ -707,7 +707,7 @@ export function init(app: express.Application) {
         error(saveErr);
         return res.status(500).send(saveErr.message);
       }
-      return res.send(204);
+      return res.sendStatus(204);
     });
   });
 
@@ -761,7 +761,7 @@ export function init(app: express.Application) {
           error(saveErr);
           return res.status(500).send(saveErr.message);
         }
-        return res.send(204);
+        return res.sendStatus(204);
       });
     });
   });
@@ -814,7 +814,7 @@ export function init(app: express.Application) {
           error(saveErr);
           return res.status(500).send(saveErr.message);
         }
-        return res.send(204);
+        return res.sendStatus(204);
       });
     });
   });
@@ -828,7 +828,7 @@ export function init(app: express.Application) {
         error(saveErr);
         return res.status(500).send(saveErr.message);
       }
-      return res.send(204);
+      return res.sendStatus(204);
     });
   });
 
@@ -921,7 +921,7 @@ export function init(app: express.Application) {
     }
     access = Number(access);
     if (traveler.publicAccess === access) {
-      return res.send(204);
+      return res.sendStatus(204);
     }
     traveler.publicAccess = access;
     traveler.save((saveErr) => {

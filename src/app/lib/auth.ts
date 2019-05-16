@@ -295,7 +295,7 @@ export function basicAuth(req: Request, res: Response, next: NextFunction) {
   const cred = basic(req);
   if (!cred || notKnown(cred)) {
     res.set('WWW-Authenticate', 'Basic realm="api"');
-    return res.send(401);
+    return res.sendStatus(401);
   }
   next();
 }
