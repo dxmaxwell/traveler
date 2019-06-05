@@ -1,6 +1,6 @@
 {
   "name": "traveler",
-  "version": "3.2.3-DEV",
+  "version": "3.2.3",
   "private": true,
   "scripts": {
     "start": "./bin/app",
