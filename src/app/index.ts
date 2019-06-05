@@ -446,7 +446,7 @@ async function doStart(): Promise<express.Application> {
       }
     }
     info('API Users: %s', apiusers.size);
-    for (const username of apiusers.values()) {
+    for (const username of apiusers.keys()) {
       info('  %s', username);
     }
     auth.setAPIUsers(apiusers);
