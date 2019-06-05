@@ -96,7 +96,7 @@
   },
   "aliases": {
     // Maps current group name to previous group name
-    //"group.new.name" : "goup.old.name"
+    //"group.new.name" : [ "goup.old.name1" ]
   },
   "apiusers": {
     // Credentials  for API

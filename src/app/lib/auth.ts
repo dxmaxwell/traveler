@@ -5,6 +5,7 @@ import * as url from 'url';
 
 import * as basic from 'basic-auth';
 import Client = require('cas.js');
+import * as Debug from 'debug';
 import * as express from 'express';
 
 import {
@@ -21,25 +22,23 @@ type Request = express.Request;
 type Response = express.Response;
 type NextFunction = express.NextFunction;
 
-interface AliasConfig {
-  [key: string]: string | undefined;
-}
+export type AliasConfig = Map<string, string[]>;
 
-interface ADConfig {
+export interface ADConfig {
   searchFilter: string;
   objAttributes: string[];
   searchBase: string;
   memberAttributes: string[];
 }
 
-interface AuthConfig {
+export interface AuthConfig {
   cas: string;
   service: string;
 }
 
-interface ApiUserConfig {
-  [key: string]: string | undefined;
-}
+export type ApiUserConfig = Map<string, string>;
+
+const debug = Debug('traveler:auth');
 
 let ad: ADConfig;
 
@@ -66,13 +65,13 @@ export function setLDAPClient(client: ldapjs.Client) {
   ldapClient = client;
 }
 
-let alias: AliasConfig = {};
+let alias: AliasConfig = new Map<string, string[]>();
 
 export function setAliases(a: AliasConfig) {
   alias = a;
 }
 
-let apiUsers: ApiUserConfig = {};
+let apiUsers: ApiUserConfig = new Map<string, string>();
 
 export function setAPIUsers(users: ApiUserConfig) {
   apiUsers = users;
@@ -91,12 +90,18 @@ function filterGroup(a: string[]): string[] {
     group = cn(a[i]);
     if (group.indexOf('lab.frib') === 0) {
       output.push(group);
-      if (alias.hasOwnProperty(group)) {
-        const groupalias = alias[group];
-        if (groupalias && output.indexOf(groupalias) === -1) {
-          output.push(groupalias);
+      debug('Add group: %s', group);
+      const groupaliases = alias.get(group);
+      if (Array.isArray(groupaliases)) {
+        for (const groupalias of groupaliases) {
+          if (groupalias && output.indexOf(groupalias) === -1) {
+            output.push(groupalias);
+            debug('Add alias: %s', groupalias);
+          }
         }
       }
+    } else {
+      debug('Ignore group: %s', group);
     }
   }
   return output;
@@ -283,10 +288,14 @@ export function verifyRole(role: string) {
 }
 
 function notKnown(cred: basic.BasicAuthResult) {
-  if (apiUsers.hasOwnProperty(cred.name)) {
-    if (apiUsers[cred.name] === cred.pass) {
+  if (apiUsers.has(cred.name)) {
+    if (apiUsers.get(cred.name) === cred.pass) {
       return false;
+    } else {
+      debug('API user found but password mismatch: %s', cred.name);
     }
+  } else {
+    warn('API user not found: %s', cred.name);
   }
   return true;
 }

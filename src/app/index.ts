@@ -94,10 +94,10 @@ interface Config {
     service_base_url?: {};
   };
   aliases: {
-    [key: string]: string  | undefined;
+    [key: string]: {} | undefined | null;
   };
   apiusers: {
-    [key: string]: string | undefined;
+    [key: string]: {} | undefined | null;
   };
   userphotos: {
     root?: {};
@@ -420,9 +420,37 @@ async function doStart(): Promise<express.Application> {
     service: url.resolve(String(cfg.cas.service_base_url), String(cfg.cas.service_url)),
   });
 
-  auth.setAliases(cfg.aliases);
+  {
+    const aliases: auth.AliasConfig = new Map<string, string[]>();
+    for (const group of Object.keys(cfg.aliases)) {
+      const groupaliases = cfg.aliases[group];
+      if (Array.isArray(groupaliases)) {
+        aliases.set(group, groupaliases.map(String));
+      }
+    }
+    info('Group Aliases: %s', aliases.size);
+    for (const [ group, groupaliases ] of aliases.entries()) {
+      for (const groupalias of groupaliases) {
+        info ('  %s => %s', group, groupalias);
+      }
+    }
+    auth.setAliases(aliases);
+  }
 
-  auth.setAPIUsers(cfg.apiusers);
+  {
+    const apiusers: auth.ApiUserConfig = new Map<string, string>();
+    for (const username of Object.keys(cfg.apiusers)) {
+      const password = cfg.apiusers[username];
+      if (password) {
+        apiusers.set(username, String(password));
+      }
+    }
+    info('API Users: %s', apiusers.size);
+    for (const username of apiusers.values()) {
+      info('  %s', username);
+    }
+    auth.setAPIUsers(apiusers);
+  }
 
   auth.setLDAPClient(adClient);
 
