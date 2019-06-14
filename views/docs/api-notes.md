@@ -1,6 +1,6 @@
 ### Notes in a traveler
 - Method: GET
-- URL: https://hostname:port/apis/travelers/:id/notes/
+- URL: https://hostname:port/api/v1/travelers/:id/notes/
 where :id is the id of the traveler whose notes are retrieved
 - Sample response:
 

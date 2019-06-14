@@ -1,6 +1,6 @@
 ### Data collected in a traveler
 - Method: GET
-- URL: https://hostname:port/apis/travelers/:id/data/
+- URL: https://hostname:port/api/v1/travelers/:id/data/
  where :id is the id of the traveler whose data is retrieved
 - Sample response:
 
@@ -31,5 +31,5 @@ Each data item in the list contains the input name in the form, the input type a
 #### File uploaded in a traveler
 Files are special data collected, and they can be retrieved by
 - Method: GET
-- URL: https://hostname:port/apis/data/:id/
+- URL: https://hostname:port/api/v1/data/:id/
 where :id is the id of the data whose type is file.

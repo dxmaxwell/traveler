@@ -1,6 +1,6 @@
 ### The list of travelers
 - Method: GET
-- URL: https://hostname:port/apis/travelers/
+- URL: https://hostname:port/api/v1/travelers/
 - Sample response:
 
 ```json
@@ -43,9 +43,9 @@
 ]
 ```
 
-The response will be a JSON array containing the list of travelers. Each traveler in the list is represented by a JSON object with traveler id, title, status, devices, createdBy, clonedBy, createdOn, deadline, updatedBy, updatedOn, sharedWith, finishedInput, and totalInput information. The traveler id can be used to retrieve more details of a traveler, https://hostname:port/apis/travelers/:id/ for the JSON representation and http://hostname:port/travelers/:id/ for the HTML representation.
+The response will be a JSON array containing the list of travelers. Each traveler in the list is represented by a JSON object with traveler id, title, status, devices, createdBy, clonedBy, createdOn, deadline, updatedBy, updatedOn, sharedWith, finishedInput, and totalInput information. The traveler id can be used to retrieve more details of a traveler, https://hostname:port/api/v1/travelers/:id/ for the JSON representation and http://hostname:port/travelers/:id/ for the HTML representation.
 
 The travler list can also be retrieved by a device name.
-- URL: https://hostname:port/apis/travelers/?device=:devicename
+- URL: https://hostname:port/api/v1/travelers/?device=:devicename
 where :devicename is the name of device that was assigned to the travelers.
 section#traveler
