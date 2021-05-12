@@ -1,0 +1,40 @@
+version: "3.9"  # optional since v1.27.0
+services:
+  traveler:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    depends_on: 
+      - ldap_service
+      - mongo_service  
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config:/traveler/config
+#       - .:/code
+#       - logvolume01:/var/log
+#     links:
+#       - redis
+#   redis:
+#     image: redis
+  ldap_service:
+    #image: osixia/openldap:1.5.0
+    build:
+      context: docker
+      dockerfile: Dockerfile.ldap
+    environment:
+      - LDAP_ORGANISATION=demo
+      - LDAP_DOMAIN=demo.com
+      - LDAP_BASE_DN=dc=demo,dc=com
+      - LDAP_ADMIN_PASSWORD=abcd
+      - LDAP_TLS=false
+    command: --loglevel debug
+    # build:
+    #   context: .
+    #   dockerfile: docker/Dockerfile.ldap
+
+  mongo_service:
+    image: mongo:4.0
+
+# volumes:
+#   logvolume01: {}

@@ -154,7 +154,7 @@ function addGroupFromAD(req: Request, res: Response, doc: SharedDocument) {
       return res.status(400).json(id + ' is not unique!');
     }
 
-    const name = result[0].displayName;
+    const name = result[0].description;
     let access = 0;
     if (req.body.access && req.body.access === 'write') {
       access = 1;
@@ -170,9 +170,12 @@ function addGroupFromAD(req: Request, res: Response, doc: SharedDocument) {
         return res.status(500).json(docErr.message);
       }
       const group = new Group({
-        _id: String(result[0].sAMAccountName).toLowerCase(),
-        name: result[0].displayName,
-        email: result[0].mail,
+        // _id: String(result[0].sAMAccountName).toLowerCase(),
+        // name: result[0].displayName,
+        // email: result[0].mail,
+        _id: String(result[0].cn).toLowerCase(),
+        name: result[0].description,
+        email: 'group@demo.com',
       });
       switch (models.getModelName(doc)) {
       case 'Form':

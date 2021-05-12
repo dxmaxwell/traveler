@@ -1,0 +1,46 @@
+
+dn: ou=People,dc=demo,dc=com
+ou: People
+description: Users of Demo
+objectClass: organizationalUnit
+
+dn: cn=jsmith,ou=People,dc=demo,dc=com
+cn: jsmith
+sn: Smith
+givenName: John
+displayName: John Smith
+mail: jsmith@demo.com
+telephoneNumber: 1-555-123-4567
+mobile: 1-555-123-4567
+physicalDeliveryOfficeName: 1234
+objectClass: inetOrgPerson
+objectClass: person
+objectClass: top
+memberOf: cn=Ops.Testing,ou=Groups,dc=demo,dc=com
+
+dn: cn=rmaclean,ou=People,dc=demo,dc=com
+cn: rmaclean
+sn: MacLean
+givenName: Ron
+displayName: Ron MacLean
+mail: rmaclean@demo.com
+telephoneNumber: 1-555-123-4567
+mobile: 1-555-123-4567
+physicalDeliveryOfficeName: 1234
+objectClass: inetOrgPerson
+objectClass: person
+objectClass: top
+memberOf: cn=Ops.Testing,ou=Groups,dc=demo,dc=com
+
+dn: ou=Groups,dc=demo,dc=com
+ou: Groups
+description: Groups of Demo
+objectClass: organizationalUnit
+
+dn: cn=Ops.Testing,ou=Groups,dc=demo,dc=com
+cn: Ops.Testing
+description: Operations Testing
+objectClass: groupOfNames
+objectClass: top
+member: cn=jsmith,ou=People,dc=demo,dc=com
+member: cn=rmaclean,ou=People,dc=demo,dc=com

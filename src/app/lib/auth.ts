@@ -4,7 +4,7 @@
 import * as url from 'url';
 
 import * as basic from 'basic-auth';
-import Client = require('cas.js');
+// import Client = require('cas.js');
 import * as Debug from 'debug';
 import * as express from 'express';
 
@@ -46,17 +46,17 @@ export function setADConfig(config: ADConfig) {
   ad = config;
 }
 
-let cas: Client;
+// let cas: Client;
 
 let authConfig: AuthConfig;
 
 export function setAuthConfig(config: AuthConfig) {
   authConfig = config;
-  cas = new Client({
-    base_url: authConfig.cas,
-    service: authConfig.service,
-    version: 1.0,
-  });
+  // cas = new Client({
+  //   base_url: authConfig.cas,
+  //   service: authConfig.service,
+  //   version: 1.0,
+  // });
 }
 
 let ldapClient: ldapjs.Client;
@@ -88,7 +88,7 @@ function filterGroup(a: string[]): string[] {
   let group: string;
   for (i = 0; i < a.length; i += 1) {
     group = cn(a[i]);
-    if (group.indexOf('lab.frib') === 0) {
+    if (group.indexOf('') === 0) {
       output.push(group);
       debug('Add group: %s', group);
       const groupaliases = alias.get(group);
@@ -126,7 +126,8 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
       }));
     }
     next();
-  } else if (!!req.query.ticket) {
+  // } else if (!!req.query.ticket) {
+  } else if (req.get('authorization')) {
     // just kicked back by CAS
     // var halt = pause(req);
     // if (req.proxied) {
@@ -135,19 +136,33 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
     //   cas.service = auth.login_service;
     // }
     // validate the ticket
-    cas.validate(req.query.ticket, (err, casresponse, result) => {
-      if (err) {
-        error(err.message);
-        return res.status(401).send(err.message);
-      }
-      if (!req.session) {
-        res.status(500).send('session not found');
-        return;
-      }
-      if (result.validated) {
-        const userid = result.username.toLowerCase();
+
+    const auth = req.get('authorization');
+
+    if (!auth || auth.split(' ')[0] !== 'Basic') {
+      res.status(500).send('basic auth required');
+      return;
+    }
+
+    const credentials = Buffer.from(auth.split(' ')[1], 'base64').toString('ascii');
+    info('Login credentials: ' +  credentials);
+
+    // cas.validate(req.query.ticket, (err, casresponse, result) => {
+    setImmediate(() => {
+      // if (err) {
+      //   error(err.message);
+      //   return res.status(401).send(err.message);
+      // }
+      // if (!req.session) {
+      //   res.status(500).send('session not found');
+      //   return;
+      // }
+      // if (result.validated) {
+      if (true) {
+      //   const userid = result.username.toLowerCase();
+        const userid = credentials.split(':')[0];
         // set userid in session
-        req.session.userid = userid;
+        req.session!.userid = userid;
         const searchFilter = ad.searchFilter.replace('_id', userid);
         const opts = {
           filter: searchFilter,
@@ -158,7 +173,7 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
         // query ad about other attribute
         ldapClient.legacySearch(ad.searchBase, opts, false, (err1, result1) => {
           if (err1) {
-            error(err.name + ' : ' + err1.message);
+            error('LDAP Search: ' + err1.message);
             return res.status(500).send('something wrong with ad');
           }
           if (!req.session) {
@@ -175,7 +190,7 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
 
           // set username and memberof in session
           req.session.username = result1[0].displayName;
-
+          info('MemberOf:', result1[0].memberOf);
           if (Array.isArray(result1[0].memberOf)) {
             req.session.memberOf = filterGroup((result1[0].memberOf as Array<string | Buffer>).map(String));
           } else {
@@ -244,10 +259,9 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
       res.set('WWW-Authenticate', 'CAS realm="' + authConfig.service + '"');
       return res.status(401).send('xhr cannot be authenticated');
     } else {
-      // set the landing, the first unauthenticated url
-      req.session.landing = req.url;
-      res.redirect(authConfig.cas + '/login?service=' + encodeURIComponent(authConfig.service));
-      // }
+      res.set('WWW-Authenticate', 'Basic realm="Traveler"');
+      res.status(401).send('must be authenticated');
+      return;
     }
   }
 }
